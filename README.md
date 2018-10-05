@@ -38,7 +38,26 @@ flask run
 
 ## Development
 
-We (mostly) use the [Google Python style guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md).
+We (mostly) use the [Google Python style guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md). The tl;dr of style rules:
+
+* 80 chars per line max
+* snake case variable names
+* readable docstring format:
+
+```
+"""
+This function answers ALL THE THINGS.
+
+Args:
+    x (int): The first thing to solve.
+    y (str): The second thing to solve.
+
+Returns:
+    The answer (probably 42).
+"""
+```
+
+* prefer `string.format` over C printf formatting
 
 # About the Project
 
