@@ -1,5 +1,7 @@
 # Project KAOS (Kerbodyne Analytical Orbit System)
 
+[![Build Status](https://travis-ci.org/KMC-70/kaos.svg?branch=master)](https://travis-ci.org/KMC-70/kaos)
+
 KAOS is a scalable satellite mission planning suite for Earth observation satellites.
 
 ## Setup
@@ -27,7 +29,7 @@ pip install -r requirements.txt
 ### Run tests
 
 ```
-pytest test
+pytest test -s
 ```
 
 ### Run the server
@@ -44,17 +46,20 @@ We (mostly) use the [Google Python style guide](https://github.com/google/styleg
 * snake case variable names
 * readable docstring format:
 
-```
-"""
-This function answers ALL THE THINGS.
+```python
+def get_the_answer(x, y, *args):
+    """
+    This function answers ALL THE THINGS.
 
-Args:
-    x (int): The first thing to solve.
-    y (str): The second thing to solve.
+    Args:
+        x (int): The first thing to answer.
+        y (str): The second thing to answer.
+        *args: All the other things to answer.
 
-Returns:
-    The answer (probably 42).
-"""
+    Returns:
+        The answer (probably 42).
+    """
+    # do stuff
 ```
 
 * prefer `string.format` over C printf formatting
