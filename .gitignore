@@ -1,8 +1,3 @@
 kenv/
 __pycache__/
 *.pyc
-./build_cscope.sh
-cscope.files
-cscope.in.out
-cscope.out
-cscope.po.out
