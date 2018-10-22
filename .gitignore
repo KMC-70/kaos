@@ -1,3 +1,4 @@
 kenv/
+venv/
 __pycache__/
 *.pyc
