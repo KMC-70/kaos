@@ -48,8 +48,7 @@ We (mostly) use the [Google Python style guide](https://github.com/google/styleg
 
 ```python
 def get_the_answer(x, y, *args):
-    """
-    This function answers ALL THE THINGS.
+    """This function answers ALL THE THINGS.
 
     Args:
         x (int): The first thing to answer.
