@@ -2,25 +2,29 @@
 
 from flask import Flask
 
-from . import database
+from .settings import DATABASE_SETTINGS
+
 
 def create_app():
     """Create and setup the KAOS app."""
-    app = Flask(__name__)
-    # Setup code goes here.
 
-    database.init_db()
+    # App configuration
+    app = Flask(__name__)
+    app.config.from_pyfile("settings.cfg")
+
+    # Database setup
+    from kaos.models import DB
+    DB.init_app(app)
+    DB.create_all(app=app)
+
+    # Blueprint and view registration
     from kaos import api
     app.register_blueprint(api.bp)
 
-    # pylint: disable=unused-variable,missing-docstring,unused-argument
+    # pylint: disable=unused-variable,missing-docstring
     @app.route('/')
     def index():
         return 'Welcome to KAOS!'
-
-    @app.teardown_appcontext
-    def shutdown_session(exception=None):
-        database.DB.remove()
-    # pylint: enable=unused-variable,missing-docstring,unused-argument
+    # pylint: enable=unused-variable,missing-docstring
 
     return app

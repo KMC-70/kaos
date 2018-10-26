@@ -3,7 +3,7 @@
 # Disable the message, report, category or checker with the given id(s).
 disable=too-few-public-methods
 # Disable member checking on runtime determined members that pylint cant detect
-generated-members=add
+generated-members=DB.*
 
 [REPORTS]
 
