@@ -2,9 +2,6 @@
 
 from flask import Flask
 
-from .settings import DATABASE_SETTINGS
-
-
 def create_app():
     """Create and setup the KAOS app."""
 
