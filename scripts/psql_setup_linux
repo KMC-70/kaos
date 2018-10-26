@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# Setup the PostgreSQL on any linux based operating system
+
+DATABASE_NAME="kaosdb"
+DATABASE_USER="kaosuser"
+PSQL_CMD="sudo -u postgres -i"
+
+# Exit on first error
+set -e
+
+if [ `uname` != "Linux" ]; then
+    echo Error: This script is only designed to run on linux operating systems
+    exit 1
+fi
+
+if [[ "$(which apt)" ]]; then
+    PKG_MGR="apt install"
+    PKG_PSQL="postgresql  postgresql-contrib"
+elif [[ "$(which pacman)" ]]; then
+    PKG_MGR="pacman -S"
+    PKG_PSQL="postgresql"
+else
+    echo Error: This script presently only supports the \"apt\" and \"pacman\" package managers
+    exit 1
+fi
+
+# Install PSQL
+sudo $PKG_MGR $PKG_PSQL
+
+# Initialize the service
+sudo systemctl start postgresql.service
+sudo systemctl enable postgresql.service
+
+# Set up tables used by KAOS
+$PSQL_CMD createuser --interactive -P -s $DATABASE_USER
+$PSQL_CMD createdb $DATABASE_NAME
+
+echo Created database: $DATABASE_NAME and user $DATABASE_USER please updated kaos/settings.py
