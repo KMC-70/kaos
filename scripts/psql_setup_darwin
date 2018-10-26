@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+if [ `uname` != "Darwin" ]; then
+    echo "Oh noes! This script will only work on MacOS, a.k.a. The Best OS."
+    exit;
+fi
+
+DATABASE_NAME="kaosdb"
+DATABASE_USER="kaosuser"
+
+# Exit on first error
+set -e
+
+# Check if brew is instealled
+if test ! $(which brew); then
+    echo "Please install homebrew first..."
+    exit;
+fi
+
+# Setup PSQL
+if test ! $(which psql); then
+    brew install postgres
+fi
+
+# Start postgres now
+pg_ctl -D /usr/local/var/postgres start
+
+# Make postgres start every time computer boots
+brew services start postgresql
+
+# Set up tables used by KAOS
+echo "Creating user..."
+createuser --interactive -P -s $DATABASE_USER
+createdb $DATABASE_NAME
+
+echo Created database: $DATABASE_NAME and user: $DATABASE_USER.
+echo You should update kaos/settings.py if you used a different password.
+
