@@ -5,10 +5,18 @@
 DATABASE_NAME="kaosdb"
 TEST_DATABASE_NAME="kaostestdb"
 DATABASE_USER="kaosuser"
+DATABASE_USER_PASSWORD="kaosuserpassword"
+
 PSQL_CMD="sudo -u postgres -i"
+PSQL_SQL_CMD="psql -c"
+
+# TODO Accept user arguments
 
 # Exit on first error
 set -e
+
+# We need to wrap the password with single quotes
+DATABASE_USER_PASSWORD="'"$DATABASE_USER_PASSWORD"'"
 
 if [ `uname` != "Linux" ]; then
     echo Error: This script is only designed to run on linux operating systems
@@ -27,14 +35,15 @@ else
 fi
 
 # Install PSQL
-sudo $PKG_MGR $PKG_PSQL
+yes | sudo $PKG_MGR $PKG_PSQL
 
-# Initialize the service
+# Initialize the psql service
 sudo systemctl start postgresql.service
 sudo systemctl enable postgresql.service
 
 # Set up tables used by KAOS
-$PSQL_CMD createuser --interactive -P -s $DATABASE_USER
+$PSQL_CMD createuser -l -s $DATABASE_USER
+$PSQL_CMD $PSQL_SQL_CMD "ALTER USER $DATABASE_USER WITH PASSWORD $DATABASE_USER_PASSWORD;"
 $PSQL_CMD createdb $DATABASE_NAME
 $PSQL_CMD createdb $TEST_DATABASE_NAME
 
