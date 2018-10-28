@@ -2,12 +2,12 @@
 
 from flask import Flask
 
-def create_app():
+def create_app(config="settings.cfg"):
     """Create and setup the KAOS app."""
 
     # App configuration
     app = Flask(__name__)
-    app.config.from_pyfile("settings.cfg")
+    app.config.from_pyfile(config)
 
     # Database setup
     from kaos.models import DB

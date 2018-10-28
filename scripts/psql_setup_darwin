@@ -6,6 +6,7 @@ if [ `uname` != "Darwin" ]; then
 fi
 
 DATABASE_NAME="kaosdb"
+TEST_DATABASE_NAME="kaostestdb"
 DATABASE_USER="kaosuser"
 
 # Exit on first error
@@ -32,7 +33,7 @@ brew services start postgresql
 echo "Creating user..."
 createuser --interactive -P -s $DATABASE_USER
 createdb $DATABASE_NAME
+createdb $TEST_DATABASE_NAME
 
 echo Created database: $DATABASE_NAME and user: $DATABASE_USER.
 echo You should update kaos/settings.py if you used a different password.
-
