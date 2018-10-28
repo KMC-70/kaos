@@ -9,9 +9,10 @@ install:
     - pip install --upgrade pip
     - pip install --upgrade setuptools
     - pip install -r requirements.txt
+    - sudo apt update
+    - ./scripts/psql_setup_linux
 
 script:
-    - ./scripts/psql_setup_linux
     - pytest test
 
 notifications:
