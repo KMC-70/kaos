@@ -10,7 +10,6 @@ Click==7.0
 configparser==3.5.0
 dnspython==1.15.0
 docutils==0.14
-dotenv==0.0.5
 email-validator==1.0.2
 enum34==1.1.6
 Flask==1.0.2
