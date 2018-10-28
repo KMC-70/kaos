@@ -34,12 +34,12 @@ else
     exit 1
 fi
 
-# Install PSQL
-yes | sudo $PKG_MGR $PKG_PSQL
-
-# Initialize the psql service
-sudo systemctl start postgresql.service
-sudo systemctl enable postgresql.service
+#Install and configure PSQL if it is not already installed
+if [[ -z "$(which psql)" ]]; then
+    yes | sudo $PKG_MGR $PKG_PSQL
+    sudo systemctl start postgresql.service
+    sudo systemctl enable postgresql.service
+fi
 
 # Set up tables used by KAOS
 $PSQL_CMD createuser -l -s $DATABASE_USER
