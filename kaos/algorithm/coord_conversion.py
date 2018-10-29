@@ -1,4 +1,5 @@
-from math import sqrt,sin,cos,pi
+from math import sqrt,sin,cos,pi,atan,tan
+from numpy import rad2deg,deg2rad
 
 def lla_to_ecef(lat, lon, alt=0):
     """converts latitude, longitude, and altitude to earth-centered, earth-fixed (ECEF) Cartesian.
@@ -41,3 +42,22 @@ def lla_to_ecef(lat, lon, alt=0):
     z = ((1-pow(e,2)) * N + alt) * sin(lat)
 
     return (x,y,z)
+
+def geod_to_geoc_lat(geod_lat_deg):
+    """Converts geodetic latitude to geocentric latitude
+
+    Args:
+    geod_lat_deg = geodetic latitude (decimal degrees)
+
+    Returns:
+    geocentric latitude (decimal degrees)
+
+    based on:
+    https://www.mathworks.com/help/aeroblks/geodetictogeocentriclatitude.html
+    http://www.jqjacobs.net/astro/geodesy.html
+    http://ccar.colorado.edu/asen5070/handouts/geodeticgeocentric.doc
+    """
+    flattening = 0.00335281068118
+    geod_lat_rad =deg2rad(geod_lat_deg)
+    geoc_lat_rad = atan(((1-flattening)**2)*tan(geod_lat_rad))
+    return rad2deg(geoc_lat_rad)
