@@ -8,13 +8,20 @@ certifi==2018.8.24
 chardet==3.0.4
 Click==7.0
 configparser==3.5.0
+dnspython==1.15.0
 docutils==0.14
+email-validator==1.0.2
 enum34==1.1.6
 Flask==1.0.2
+Flask-SQLAlchemy==2.3.2
+Flask-Testing==0.7.1
+Flask-Validator==1.2.3
 funcsigs==1.0.2
 futures==3.2.0
 idna==2.7
 imagesize==1.1.0
+isbnlib==3.6.8
+iso3166==0.8
 isort==4.3.4
 itsdangerous==0.24
 Jinja2==2.10
@@ -26,7 +33,9 @@ numpy==1.15.2
 packaging==18.0
 pathlib2==2.3.2
 pluggy==0.7.1
+psycopg2-binary==2.7.5
 py==1.6.0
+py-moneyed==0.7.0
 pycodestyle==2.3.1
 pyflakes==1.6.0
 Pygments==2.2.0
@@ -34,7 +43,7 @@ pylint==1.9.3
 pyparsing==2.2.2
 pytest==3.8.2
 python-dotenv==0.9.1
-pytz==2018.5
+pytz==2017.2
 requests==2.19.1
 scandir==1.9.0
 singledispatch==3.4.0.3
@@ -42,6 +51,7 @@ six==1.11.0
 snowballstemmer==1.2.1
 Sphinx==1.8.1
 sphinxcontrib-websupport==1.1.0
+SQLAlchemy==1.2.12
 typing==3.6.6
 urllib3==1.23
 Werkzeug==0.14.1
