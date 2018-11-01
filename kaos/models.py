@@ -70,7 +70,13 @@ class OrbitRecords(SavableModel, DB.Model):
     position = DB.Column(DB.ARRAY(DB.Float, dimensions=3), nullable=False)
     velocity = DB.Column(DB.ARRAY(DB.Float, dimensions=3), nullable=False)
 
+    def __init__(self, response):
+        self.response = response
+
     @classmethod
     def __declare_last__(cls):
         ValidateInteger(OrbitRecords.uid)
         ValidateInteger(OrbitRecords.time)
+
+    def get_db(self):
+        return self
