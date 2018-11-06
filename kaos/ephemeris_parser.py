@@ -6,10 +6,9 @@ from kaos.models import DB, OrbitRecords, SatelliteInfo
 from collections import namedtuple
 
 class EphemerisParser(object):
-    def __init__(self, file_name):
-        self.file_name = file_name
 
-    def add_segment_to_db(self, segment, satellite_id):
+    @staticmethod
+    def add_segment_to_db(segment, satellite_id):
         """Add the given segment to the database.
         We create a new entry in the Segment DB that holds
         - segment_id
@@ -26,16 +25,21 @@ class EphemerisParser(object):
         segment_start = segment[0].time
         segment_end = segment[-1].time
 
+        print("segment start: {}".format(segment_start))
+        print("segment end: {}".format(segment_end))
+        print("segment size: {}".format(len(segment)))
+
         """create segment entry.
         Retrieve segment ID and insert
         it along with data into Orbit db
         """
 
-        orbit_db = OrbitRecords.get_db()
+        '''orbit_records = OrbitRecords("")
+        orbit_db = orbit_records.get_db()
         for seg in segment:
             orbit_db.platform_id = satellite_id
 
-        orbit_db.save()
+        orbit_db.save()'''
         #DB.session.commit()
 
     @staticmethod
@@ -46,15 +50,17 @@ class EphemerisParser(object):
             segment_tuples = []
             read_segment_boundaries = False
             read_orbital_data = False
+
+            last_seen_segment_boundary = 0
             for line in f:
                 line = line.rstrip('\n')
                 if "Epoch in JDate format:" in line:
                     start_time = float(line.split(':')[1])
-                    print(start_time)
+                    #print(start_time)
 
                 if "CoordinateSystem" in line:
                     coord_system = str(line.split()[1])
-                    print(coord_system)
+                    #print(coord_system)
 
                 if "END SegmentBoundaryTimes" in line:
                     read_segment_boundaries = False
@@ -62,14 +68,13 @@ class EphemerisParser(object):
                 if (read_segment_boundaries):
                     line = line.strip()
                     if line:
-                        print(float(line))
+                        #print(float(line))
                         segment_boundaries.append(float(line))
 
                 if "BEGIN SegmentBoundaryTimes" in line:
                     read_segment_boundaries = True
 
                 if "END Ephemeris" in line:
-                    print(line)
                     read_orbital_data = False
 
                 if (read_orbital_data):
@@ -78,21 +83,21 @@ class EphemerisParser(object):
                         """each row is a 7-tuple formatted as
                         time posx posy posz velx vely velz"""
                         ephemeris_row = [float(num) for num in line.split()]
-                        print(ephemeris_row)
-                        '''orbital_row = namedtuple('orbit_point', 'time, posx, posy, posz, velx, vely, velz')
+                        orbital_row = namedtuple('orbit_point', 'time, posx, posy, posz, velx, vely, velz')
                         orbit_tuple = orbital_row._make(ephemeris_row)
-                        segment_tuples.append(orbit_tuple)'''
+                        segment_tuples.append(orbit_tuple)
 
                         """ The line we just read is a segment boundary,
                         So add this segment to the db
                         """
-                        '''if (orbit_tuple.time in segment_boundaries):
-                            add_segment_to_db(segment_tuples, satellite_id)
-                            segment_tuples.clear()'''
+                        if (orbit_tuple.time in segment_boundaries):
+                            if (last_seen_segment_boundary != orbit_tuple.time):
+                                last_seen_segment_boundary = orbit_tuple.time
+                                EphemerisParser.add_segment_to_db(segment_tuples, satellite_id)
+                                del segment_tuples[:]
 
 
                 if "EphemerisTimePosVel" in line:
-                    print(line)
                     read_orbital_data = True
 
 

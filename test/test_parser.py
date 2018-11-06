@@ -12,10 +12,8 @@ class TestEphemerisParser(KaosTestCase):
 
     def test_simple_parser1(self):
         """Test that an empty response cannot be commited to history."""
-        ephem = EphemerisParser("/Users/jamieasefa/Documents/Courses/CPEN491/kaos/ephemeris/Radarsat2_J2000.e")
         EphemerisParser.parse_file("/Users/jamieasefa/Documents/Courses/CPEN491/kaos/ephemeris/Radarsat2_J2000.e", 1)
 
     def test_simple_parser2(self):
         """Test that an empty response cannot be commited to history."""
-        ephem = EphemerisParser("/Users/jamieasefa/Documents/Courses/CPEN491/kaos/ephemeris/Radarsat2_Fixed.e")
         EphemerisParser.parse_file("/Users/jamieasefa/Documents/Courses/CPEN491/kaos/ephemeris/Radarsat2_Fixed.e", 1)
