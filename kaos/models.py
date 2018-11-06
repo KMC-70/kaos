@@ -75,12 +75,18 @@ class OrbitSegments(SavableModel, DB.Model):
     end_time = DB.Column(DB.Integer, nullable=False)
     orbit_records = DB.relationship("OrbitRecords", backref='orbit_segment', lazy=True)
 
+    def __init__(self, response):
+        self.response = response
+
     @classmethod
     def __declare_last__(cls):
         ValidateInteger(OrbitSegments.segment_id)
         ValidateInteger(OrbitSegments.platform_id)
         ValidateInteger(OrbitSegments.start_time)
         ValidateInteger(OrbitSegments.end_time)
+
+    def get_db(self):
+        return self
 
 class OrbitRecords(SavableModel, DB.Model):
     """This table stores satellite ephemeris records at specific points in time.

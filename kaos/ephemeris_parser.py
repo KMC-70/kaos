@@ -1,8 +1,8 @@
 """"Handles the reading and parsing of ephemeris files.
 Parsed files are stored in the DB.
 """
-#import numpy as np
-from kaos.models import DB, OrbitRecords, SatelliteInfo
+
+from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
 from collections import namedtuple
 
 class EphemerisParser(object):
@@ -33,34 +33,53 @@ class EphemerisParser(object):
         Retrieve segment ID and insert
         it along with data into Orbit db
         """
+        segment_db = OrbitSegments("")
+        segment_db.platform_id = satellite_id
+        segment_db.start_time = segment_start
+        segment_db.end_time = segment_end
 
-        '''orbit_records = OrbitRecords("")
-        orbit_db = orbit_records.get_db()
+        orbit_db = OrbitRecords("")
         for seg in segment:
             orbit_db.platform_id = satellite_id
+            orbit_db.time = seg.time
+            orbit_db.segment_id = segment_db.segment_id
+            orbit_db.position = [seg.posx, seg.posy, seg.posz]
+            orbit_db.velocity = [seg.velx, seg.vely, seg.velz]
 
-        orbit_db.save()'''
+        orbit_db.save()
         #DB.session.commit()
 
     @staticmethod
     def parse_file(file_handle, satellite_id):
-        orbital_data = []
-        segment_boundaries = []
+
         with open(file_handle, "rU") as f:
+            """A list containing each of the 15 or so
+            segment boundaries outlined in the SegmentBoundaryTimes
+            portion of the ephemeris file"""
+            segment_boundaries = []
+
+            """A list containing the orbit data rows
+            within a segment"""
             segment_tuples = []
+
+            """Flags"""
             read_segment_boundaries = False
             read_orbital_data = False
 
+            """Remembers the last seen segment boundary
+            while reading the ephemeris rows. Needed
+            to differentiate between the beginning
+            of a new segment and the end of en existing
+            segment of data"""
             last_seen_segment_boundary = 0
+
             for line in f:
                 line = line.rstrip('\n')
                 if "Epoch in JDate format:" in line:
                     start_time = float(line.split(':')[1])
-                    #print(start_time)
 
                 if "CoordinateSystem" in line:
                     coord_system = str(line.split()[1])
-                    #print(coord_system)
 
                 if "END SegmentBoundaryTimes" in line:
                     read_segment_boundaries = False
@@ -68,7 +87,6 @@ class EphemerisParser(object):
                 if (read_segment_boundaries):
                     line = line.strip()
                     if line:
-                        #print(float(line))
                         segment_boundaries.append(float(line))
 
                 if "BEGIN SegmentBoundaryTimes" in line:
@@ -88,7 +106,13 @@ class EphemerisParser(object):
                         segment_tuples.append(orbit_tuple)
 
                         """ The line we just read is a segment boundary,
-                        So add this segment to the db
+                        So first check that this is the *end* of a segment and then
+                        add this segment to the db.
+
+                        A segment begins with the same time-stamp that the previous segment
+                        ended with. So we don't want to commit the first entry in a
+                        *new* segment. The last_seen_segment_boundary != orbit_tuple.time checks
+                        this and makes sure not to commit to the db in this case.
                         """
                         if (orbit_tuple.time in segment_boundaries):
                             if (last_seen_segment_boundary != orbit_tuple.time):
