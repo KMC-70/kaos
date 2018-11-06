@@ -1,87 +1,99 @@
 """"Handles the reading and parsing of ephemeris files.
 Parsed files are stored in the DB.
 """
-import numpy as np
-from .context import kaos
+#import numpy as np
 from kaos.models import DB, OrbitRecords, SatelliteInfo
 from collections import namedtuple
 
-def parse_file(file_handle, satellite_id):
-    orbital_data = []
-    segment_boundaries = []
-    with open(file_handle, "rU") as f:
-        segment_tuples = []
-        for line in f:
-            line = line.rstrip('\n')
-            if "Epoch in JDate format:" in line:
-                start_time = float(line.split(':')[1])
+class EphemerisParser(object):
+    def __init__(self, file_name):
+        self.file_name = file_name
 
-            if "CoordinateSystem" in line:
-                coord_system = str(line.split()[1])
+    def add_segment_to_db(self, segment, satellite_id):
+        """Add the given segment to the database.
+        We create a new entry in the Segment DB that holds
+        - segment_id
+        - segment_start
+        - segment_end
+        - satellite_id
 
-            if "BEGIN SegmentBoundaryTimes" in line:
-                read_segment_boundaries = True
+        This segment element is also used to index a group of
+        rows in the Orbits DB. This lets us know that the orbit
+        data belongs to a given segment. This is because
+        we cannot perform interpolation using points in
+        different segments.
+        """
+        segment_start = segment[0].time
+        segment_end = segment[-1].time
 
-            if "END SegmentBoundaryTimes" in line:
-                read_segment_boundaries = False
+        """create segment entry.
+        Retrieve segment ID and insert
+        it along with data into Orbit db
+        """
 
-            if (read_segment_boundaries):
-                line = line.strip()
-                if line:
-                    segment_boundaries.insert(format(line, 'f'))
+        orbit_db = OrbitRecords.get_db()
+        for seg in segment:
+            orbit_db.platform_id = satellite_id
 
-            if "EphemerisTimePosVel" in line:
-                read_orbital_data = True
+        orbit_db.save()
+        #DB.session.commit()
 
-            if "END Ephemeris" in line:
-                read_orbital_data = False
+    @staticmethod
+    def parse_file(file_handle, satellite_id):
+        orbital_data = []
+        segment_boundaries = []
+        with open(file_handle, "rU") as f:
+            segment_tuples = []
+            read_segment_boundaries = False
+            read_orbital_data = False
+            for line in f:
+                line = line.rstrip('\n')
+                if "Epoch in JDate format:" in line:
+                    start_time = float(line.split(':')[1])
+                    print(start_time)
 
-            if (read_orbital_data):
-                if line:
-                    """each row is a 7-tuple formatted as
-                    time posx posy posz velx vely velz"""
-                    ephemeris_row = [format(num, 'f') for num in line.split()]
-                    orbital_row = namedtuple('orbit_point', 'time, posx, posy, posz, velx, vely, velz')
-                    orbit_tuple = orbital_row._make(ephemeris_row)
-                    segment_tuples.insert(orbit_tuple)
+                if "CoordinateSystem" in line:
+                    coord_system = str(line.split()[1])
+                    print(coord_system)
 
-                    """ The line we just read is a segment boundary,
-                    So add this segment to the db
-                    """
-                    if (orbit_tuple.time in segment_boundaries):
-                        add_segment_to_db(segment_tuples, satellite_id)
-                        segment_tuples.clear()
+                if "END SegmentBoundaryTimes" in line:
+                    read_segment_boundaries = False
 
+                if (read_segment_boundaries):
+                    line = line.strip()
+                    if line:
+                        print(float(line))
+                        segment_boundaries.append(float(line))
 
-def add_segment_to_db(segment, satellite_id):
-    """Add the given segment to the database.
-    We create a new entry in the Segment DB that holds
-    - segment_id
-    - segment_start
-    - segment_end
-    - satellite_id
+                if "BEGIN SegmentBoundaryTimes" in line:
+                    read_segment_boundaries = True
 
-    This segment element is also used to index a group of
-    rows in the Orbits DB. This lets us know that the orbit
-    data belongs to a given segment. This is because
-    we cannot perform interpolation using points in
-    different segments.
-    """
-    segment_start = segment[0].time
-    segment_end = segment[-1].time
+                if "END Ephemeris" in line:
+                    print(line)
+                    read_orbital_data = False
 
-    """create segment entry.
-    Retrieve segment ID and insert
-    it along with data into Orbit db
-    """
+                if (read_orbital_data):
+                    line = line.strip()
+                    if line:
+                        """each row is a 7-tuple formatted as
+                        time posx posy posz velx vely velz"""
+                        ephemeris_row = [float(num) for num in line.split()]
+                        print(ephemeris_row)
+                        '''orbital_row = namedtuple('orbit_point', 'time, posx, posy, posz, velx, vely, velz')
+                        orbit_tuple = orbital_row._make(ephemeris_row)
+                        segment_tuples.append(orbit_tuple)'''
 
-    orbit_db = OrbitRecords.get_db()
-    for seg in segment:
-        orbit_db.platform_id = satellite_id
+                        """ The line we just read is a segment boundary,
+                        So add this segment to the db
+                        """
+                        '''if (orbit_tuple.time in segment_boundaries):
+                            add_segment_to_db(segment_tuples, satellite_id)
+                            segment_tuples.clear()'''
 
 
+                if "EphemerisTimePosVel" in line:
+                    print(line)
+                    read_orbital_data = True
 
-    orbit_db.save()
 
-    #DB.session.commit()
 
