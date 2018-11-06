@@ -44,7 +44,7 @@ pyparsing==2.2.2
 pytest==3.8.2
 python-dotenv==0.9.1
 pytz==2017.2
-requests==2.19.1
+requests==2.20.0
 scandir==1.9.0
 singledispatch==3.4.0.3
 six==1.11.0
