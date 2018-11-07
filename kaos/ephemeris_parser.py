@@ -2,13 +2,17 @@
 Parsed files are stored in the DB.
 """
 
-from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
 from collections import namedtuple
+
+from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
+from .algorithm import Vector3D
+
+OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
 class EphemerisParser(object):
 
     @staticmethod
-    def add_segment_to_db(segment, satellite_id):
+    def add_segment_to_db(orbit_data, satellite_id):
         """Add the given segment to the database.
         We create a new entry in the Segment DB that holds
         - segment_id
@@ -22,35 +26,40 @@ class EphemerisParser(object):
         we cannot perform interpolation using points in
         different segments.
         """
-        segment_start = segment[0].time
-        segment_end = segment[-1].time
+        # TODO Validate satellite_id 
+
+        segment_start = orbit_data[0].time
+        segment_end = orbit_data[-1].time
 
         print("segment start: {}".format(segment_start))
         print("segment end: {}".format(segment_end))
-        print("segment size: {}".format(len(segment)))
 
         """create segment entry.
         Retrieve segment ID and insert
         it along with data into Orbit db
         """
-        segment_db = OrbitSegments("")
-        segment_db.platform_id = satellite_id
-        segment_db.start_time = segment_start
-        segment_db.end_time = segment_end
+        # TODO Check if a segment exists that overlaps this segment
 
-        orbit_db = OrbitRecords("")
-        for seg in segment:
-            orbit_db.platform_id = satellite_id
-            orbit_db.time = seg.time
-            orbit_db.segment_id = segment_db.segment_id
-            orbit_db.position = [seg.posx, seg.posy, seg.posz]
-            orbit_db.velocity = [seg.velx, seg.vely, seg.velz]
 
-        orbit_db.save()
-        #DB.session.commit()
+        segment = OrbitSegments(platform_id=satellite_id, start_time=int(segment_start),
+                                end_time=int(segment_end))
+        segment.save()
+        DB.session.commit()
+
+        for orbit_point in orbit_data:
+            # TODO Validate uniqueness for this platform
+            orbit_record = OrbitRecords(platform_id=satellite_id, segment_id=segment.segment_id,
+                                        time=orbit_point.time, position=orbit_point.pos,
+                                        velocity=orbit_point.vel)
+            orbit_record.save()
+
+        DB.session.commit()
 
     @staticmethod
     def parse_file(file_handle, satellite_id):
+
+        # TODO Create the satelite if not present
+        # Look at test
 
         with open(file_handle, "rU") as f:
             """A list containing each of the 15 or so
@@ -101,8 +110,8 @@ class EphemerisParser(object):
                         """each row is a 7-tuple formatted as
                         time posx posy posz velx vely velz"""
                         ephemeris_row = [float(num) for num in line.split()]
-                        orbital_row = namedtuple('orbit_point', 'time, posx, posy, posz, velx, vely, velz')
-                        orbit_tuple = orbital_row._make(ephemeris_row)
+                        orbit_tuple = OrbitPoint(ephemeris_row[0], ephemeris_row[1:4],
+                                                 ephemeris_row[4:7])
                         segment_tuples.append(orbit_tuple)
 
                         """ The line we just read is a segment boundary,
@@ -114,8 +123,8 @@ class EphemerisParser(object):
                         *new* segment. The last_seen_segment_boundary != orbit_tuple.time checks
                         this and makes sure not to commit to the db in this case.
                         """
-                        if (orbit_tuple.time in segment_boundaries):
-                            if (last_seen_segment_boundary != orbit_tuple.time):
+                        if orbit_tuple.time in segment_boundaries:
+                            if last_seen_segment_boundary != orbit_tuple.time:
                                 last_seen_segment_boundary = orbit_tuple.time
                                 EphemerisParser.add_segment_to_db(segment_tuples, satellite_id)
                                 del segment_tuples[:]
@@ -124,5 +133,5 @@ class EphemerisParser(object):
                 if "EphemerisTimePosVel" in line:
                     read_orbital_data = True
 
-
+            DB.session.commit()
 
