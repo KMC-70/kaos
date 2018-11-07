@@ -71,22 +71,14 @@ class OrbitSegments(SavableModel, DB.Model):
 
     segment_id = DB.Column(DB.Integer, primary_key=True)
     platform_id = DB.Column(DB.Integer, DB.ForeignKey('SatelliteInfo.platform_id'), nullable=False)
-    start_time = DB.Column(DB.Integer, nullable=False)
-    end_time = DB.Column(DB.Integer, nullable=False)
+    start_time = DB.Column(DB.Float, nullable=False)
+    end_time = DB.Column(DB.Float, nullable=False)
     orbit_records = DB.relationship("OrbitRecords", backref='orbit_segment', lazy=True)
-
-    def __init__(self, response):
-        self.response = response
 
     @classmethod
     def __declare_last__(cls):
         ValidateInteger(OrbitSegments.segment_id)
         ValidateInteger(OrbitSegments.platform_id)
-        ValidateInteger(OrbitSegments.start_time)
-        ValidateInteger(OrbitSegments.end_time)
-
-    def get_db(self):
-        return self
 
 class OrbitRecords(SavableModel, DB.Model):
     """This table stores satellite ephemeris records at specific points in time.
@@ -104,17 +96,10 @@ class OrbitRecords(SavableModel, DB.Model):
     uid = DB.Column(DB.Integer, primary_key=True)
     platform_id = DB.Column(DB.Integer, DB.ForeignKey('SatelliteInfo.platform_id'), nullable=False)
     segment_id = DB.Column(DB.Integer, DB.ForeignKey('OrbitSegments.segment_id'), nullable=False)
-    time = DB.Column(DB.Integer, nullable=False)
-    position = DB.Column(DB.ARRAY(DB.Float, dimensions=3), nullable=False)
-    velocity = DB.Column(DB.ARRAY(DB.Float, dimensions=3), nullable=False)
-
-    def __init__(self, response):
-        self.response = response
+    time = DB.Column(DB.Float, nullable=False)
+    position = DB.Column(DB.ARRAY(DB.Float), nullable=False)
+    velocity = DB.Column(DB.ARRAY(DB.Float), nullable=False)
 
     @classmethod
     def __declare_last__(cls):
         ValidateInteger(OrbitRecords.uid)
-        ValidateInteger(OrbitRecords.time)
-
-    def get_db(self):
-        return self
