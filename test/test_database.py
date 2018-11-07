@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from . import KaosTestCase
 from .context import kaos
-from kaos.models import DB, ResponseHistory
+from kaos.models import *
 
 class TestResponseHistory(KaosTestCase):
     """Ensures that the response history table behaves as expected."""
@@ -80,3 +80,25 @@ class TestResponseHistory(KaosTestCase):
         response_history_2.save()
         with self.assertRaises(IntegrityError):
             DB.session.commit()
+
+    def test_single_segment_min_max(self):
+        """Test that a single orbital segment has the correct
+        start and end time."""
+        sat = SatelliteInfo(platform_name="TEST")
+        sat.save()
+        DB.session.commit()
+
+        start = 0.0
+        end = 1000.0
+
+        orbit_segment = OrbitSegments(platform_id=sat.platform_id, start_time=start,
+                                        end_time=end)
+        orbit_segment.save()
+        DB.session.commit()
+
+        query_min = orbit_segment.query.filter(orbit_segment.start_time == start).all()
+        query_max = orbit_segment.query.filter(orbit_segment.end_time == end).all()
+
+        for q_min, q_max in zip(query_min, query_max):
+            self.assertTrue(q_min.start_time == start)
+            self.assertTrue(q_max.end_time == end)
