@@ -19,7 +19,6 @@ def add_segment_to_db(orbit_data, satellite_id):
     """
 
     # TODO Validate satellite_id
-
     segment_start = orbit_data[0].time
     segment_end = orbit_data[-1].time
 
@@ -42,7 +41,6 @@ def add_segment_to_db(orbit_data, satellite_id):
     DB.session.commit()
 
     for orbit_point in orbit_data:
-        # TODO Validate uniqueness for this platform
         orbit_record = OrbitRecords(platform_id=satellite_id, segment_id=segment.segment_id,
                                     time=orbit_point.time, position=orbit_point.pos,
                                     velocity=orbit_point.vel)
