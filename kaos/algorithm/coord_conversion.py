@@ -65,8 +65,7 @@ def geod_to_geoc_lat(geod_lat_deg):
     return rad2deg(geoc_lat_rad)
 
 def lla_to_eci(lat, lon, alt, time_posix):
-    """
-    Converts geodetic lat,lon,alt, to a Cartesian vector in GCRS frame at the given time.
+    """Converts geodetic lat,lon,alt, to a Cartesian vector in GCRS frame at the given time.
 
     Args:
     lat(int) = geodetic latitude (decimal degrees)
