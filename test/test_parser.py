@@ -5,12 +5,12 @@ from collections import namedtuple
 from kaos.models import *
 from kaos.parser import *
 
-from . import KaosTestCase
+from . import KaosTestCaseNonPersistent
 from .context import kaos
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
-class TestEphemerisParser(KaosTestCase):
+class TestEphemerisParser(KaosTestCaseNonPersistent):
     """Ensures that the ephemeris parser behaves as expected."""
 
     def test_db_add_correct_num_rows(self):
