@@ -1,6 +1,8 @@
-from algorithm import coord_conversion
-from ddt import ddt,data
 import pytest, unittest
+
+from ddt import ddt,data
+
+from kaos.algorithm import coord_conversion
 
 @ddt
 class Test_lla_to_ecef(unittest.TestCase):
@@ -37,3 +39,25 @@ class Test_geod_to_geoc_lat(unittest.TestCase):
         """
         geoc_lat_deg = coord_conversion.geod_to_geoc_lat(test_data[0])
         self.assertAlmostEqual(geoc_lat_deg,test_data[1],places=4)
+
+@ddt
+class Test_lla_to_eci(unittest.TestCase):
+
+    @data((0,0,0,946684800,(-1.1040230676e+6,6.28185996625e+6,145.726867)),
+        (10,120,0,946684800,(-4.81449119049e+6,-4.0352367821e+6,1.100005365e+6)),
+        (-25,80,0,946684800,(-5.78394065413e+6,3.324200655e+3,-2.6792309935e+6)),
+        (-70.54,-12.53,0,946684800,(9.5436e+4,2.1293e+6,-5.9913e+6)),
+        (60.21,-80.46,0,946684800,(2.9943e+6,1.0607e+6,5.5122e+6)))
+    def test_lla_to_eci(self,test_data):
+        """
+        Test for lat,lon,alt conversion to GCRS
+        Note the 200m delta, see function docstring for details.
+
+        Test_data format:
+          lat,lon,alt,time_posix,(GCRS expected x,GCRS expected y,GCRS expected z)
+        Values generated using Matlab: lla2eci([lat,lon,alt],time) which is in a J2000 FK5 frame
+        """
+        loc_eci = coord_conversion.lla_to_eci(test_data[0],test_data[1],test_data[2],test_data[3])
+        self.assertAlmostEqual(loc_eci[0],test_data[4][0],delta=200)
+        self.assertAlmostEqual(loc_eci[1],test_data[4][1],delta=200)
+        self.assertAlmostEqual(loc_eci[2],test_data[4][2],delta=200)

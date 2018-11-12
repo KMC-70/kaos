@@ -1,5 +1,4 @@
-"""
-This file contains routing code for the APIs. It should not contain much.
+"""This file contains routing code for the APIs. It should not contain much.
 
 Author: Team KMC-70.
 """
@@ -12,8 +11,7 @@ bp = Blueprint('api', __name__, url_prefix='/api')
 
 @bp.route('/')
 def get_visible_satellites():
-    """
-    Get the number of satellites that have visibility to a site.
+    """Get the number of satellites that have visibility to a site.
 
     Requires:
         The user supplies a query param, 'coords.'
@@ -28,4 +26,3 @@ def get_visible_satellites():
     x, y = coords.replace(' ', '').split(',')
 
     return "Over 9000 satellites can view location: {},{}".format(x, y)
-

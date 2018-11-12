@@ -5,10 +5,17 @@ python:
 
 cache: pip
 
-install: 
-    - pip install -r requirements.txt
+services:
+    - postgresql
 
-script: 
+install:
+    - pip install --upgrade pip
+    - pip install --upgrade setuptools
+    - pip install -r requirements.txt
+    - sudo apt update
+    - ./scripts/psql_setup_linux
+
+script:
     - pytest test
 
 notifications:

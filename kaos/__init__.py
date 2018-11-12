@@ -1,17 +1,20 @@
-"""
-Initialization code for KAOS goes here.
-"""
+"""KAOS application initialization code."""
 
 from flask import Flask
 
-def create_app():
-    """
-    Create and setup the KAOS app.
-    """
+def create_app(config="settings.cfg"):
+    """Create and setup the KAOS app."""
+
+    # App configuration
     app = Flask(__name__)
+    app.config.from_pyfile(config)
 
-    # Setup code goes here.
+    # Database setup
+    from kaos.models import DB
+    DB.init_app(app)
+    DB.create_all(app=app)
 
+    # Blueprint and view registration
     from kaos import api
     app.register_blueprint(api.bp)
 
@@ -22,4 +25,3 @@ def create_app():
     # pylint: enable=unused-variable,missing-docstring
 
     return app
-
