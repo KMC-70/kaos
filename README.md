@@ -42,14 +42,13 @@ flask run
 
 We (mostly) use the [Google Python style guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md). The tl;dr of style rules:
 
-* 80 chars per line max
+* 100 chars per line max
 * snake case variable names
 * readable docstring format:
 
 ```python
 def get_the_answer(x, y, *args):
-    """
-    This function answers ALL THE THINGS.
+    """This function answers ALL THE THINGS.
 
     Args:
         x (int): The first thing to answer.
