@@ -1,19 +1,21 @@
-from math import sqrt,sin,cos,pi,atan,tan
-from numpy import rad2deg,deg2rad
-from astropy import coordinates, units
-from astropy.time import Time
-from kaos.algorithm import Vector3D
+from math import sqrt,sin,cos,atan,tan
 
-def lla_to_ecef(lat, lon, alt=0):
+from numpy import rad2deg,deg2rad
+from astropy import coordinates
+from astropy.time import Time
+
+from kaos.algorithm import Vector3D,ELLIPSOID_A,ELLIPSOID_E
+
+def lla_to_ecef(lat_deg, lon_deg, alt=0):
     """converts latitude, longitude, and altitude to earth-centered, earth-fixed (ECEF) Cartesian.
 
     Args:
-    lat = geodetic latitude (decimal degrees)
-    lon = longitude (decimal degrees)
-    alt = height above WGS84 ellipsoid (m)
+    lat(int) = geodetic latitude (decimal degrees)
+    lon(int) = longitude (decimal degrees)
+    alt(int) = height above WGS84 ellipsoid (m)
 
     Returns:
-    (x,y,z) such that:
+    Vector3D(x,y,z) such that:
       x = ECEF X-coordinate (m)
       y = ECEF Y-coordinate (m)
       z = ECEF Z-coordinate (m)
@@ -30,27 +32,24 @@ def lla_to_ecef(lat, lon, alt=0):
               NIMA TR8350.2
     """
 
-    # WGS84 ellipsoid constants:
-    a = 6378137
-    e = 8.1819190842622e-2
     #decimal degrees to radians
-    lat = lat/360*2*pi
-    lon = lon/360*2*pi
+    lat_rad = deg2rad(lat_deg)
+    lon_rad = deg2rad(lon_deg)
     # intermediate calculation
     # (prime vertical radius of curvature)
-    N = a / sqrt(1 - pow(e,2) * pow(sin(lat),2))
+    N = ELLIPSOID_A / sqrt(1 - pow(ELLIPSOID_E,2) * pow(sin(lat_rad),2))
     # results:
-    x = (N+alt) * cos(lat) * cos(lon)
-    y = (N+alt) * cos(lat) * sin(lon)
-    z = ((1-pow(e,2)) * N + alt) * sin(lat)
+    x = (N+alt) * cos(lat_rad) * cos(lon_rad)
+    y = (N+alt) * cos(lat_rad) * sin(lon_rad)
+    z = ((1-pow(ELLIPSOID_E,2)) * N + alt) * sin(lat_rad)
 
-    return (x,y,z)
+    return Vector3D(x,y,z)
 
 def geod_to_geoc_lat(geod_lat_deg):
     """Converts geodetic latitude to geocentric latitude
 
     Args:
-    geod_lat_deg = geodetic latitude (decimal degrees)
+    geod_lat_deg(int) = geodetic latitude (decimal degrees)
 
     Returns:
     geocentric latitude (decimal degrees)
@@ -65,15 +64,15 @@ def geod_to_geoc_lat(geod_lat_deg):
     geoc_lat_rad = atan(((1-flattening)**2)*tan(geod_lat_rad))
     return rad2deg(geoc_lat_rad)
 
-def lla_to_eci(lat, lon, alt=0, time_posix=946684800):
+def lla_to_eci(lat, lon, alt, time_posix):
     """
     Converts geodetic lat,lon,alt, to a Cartesian vector in GCRS frame at the given time.
 
     Args:
-    at = geodetic latitude (decimal degrees)
-    lon = longitude (decimal degrees)
-    alt = height above WGS84 ellipsoid (m)
-    time_posix= reference frame time
+    lat(int) = geodetic latitude (decimal degrees)
+    lon(int) = longitude (decimal degrees)
+    alt(int) = height above WGS84 ellipsoid (m)
+    time_posix(int) = reference frame time
 
     Returns:
     Vector3D(x,y,z) such that:
@@ -84,7 +83,7 @@ def lla_to_eci(lat, lon, alt=0, time_posix=946684800):
     Important Note: Unlike the rest of the software that uses J2000 FK5, the ECI frame used here is
     GCRS; This can potentially introduce around 200m error for locations on surface of Earth.
     """
-    posix_zero = Time(time_posix, format='unix')
+    posix_time_internal = Time(time_posix, format='unix')
     loc_lla = coordinates.EarthLocation.from_geodetic(lon,lat,alt)
-    loc_eci = loc_lla.get_gcrs_posvel(posix_zero)
+    loc_eci = loc_lla.get_gcrs_posvel(posix_time_internal)
     return Vector3D(loc_eci[0].x.value,loc_eci[0].y.value,loc_eci[0].z.value)

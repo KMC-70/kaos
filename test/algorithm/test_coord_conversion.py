@@ -1,6 +1,8 @@
-from algorithm import coord_conversion
-from ddt import ddt,data
 import pytest, unittest
+
+from ddt import ddt,data
+
+from kaos.algorithm import coord_conversion
 
 @ddt
 class Test_lla_to_ecef(unittest.TestCase):
