@@ -120,9 +120,7 @@ class TestResponseHistory(KaosTestCase):
             orbit_data.append(orbit_tuple)
 
         add_segment_to_db(orbit_data, sat.platform_id)
-
-        orbit_db = OrbitRecords()
-        self.assertTrue(len(orbit_db.query.all()) == 20)
+        self.assertTrue(len(OrbitRecords.query.all()) == 20)
 
     def test_db_add_correct_orbit_data(self):
         """Test that the add_segment_to_db adds the correct row data to the DB. Validates time,

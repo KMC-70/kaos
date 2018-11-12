@@ -26,10 +26,12 @@ def add_segment_to_db(orbit_data, satellite_id):
     """Abort if this segment overlaps with anything currently in the DB, because we cannot
     interpolate across segments."""
     if OrbitSegments.query.filter(OrbitSegments.platform_id == satellite_id) \
-                          .filter(or_(((segment_start <= OrbitSegments.start_time) \
-                                        & (segment_end >= OrbitSegments.start_time)), \
-                                     ((segment_start <= OrbitSegments.end_time) \
-                                        & (segment_end >= OrbitSegments.end_time)))) \
+                          .filter(or_(((segment_start < OrbitSegments.start_time) \
+                                        & (segment_end > OrbitSegments.start_time)), \
+                                     ((segment_start < OrbitSegments.end_time) \
+                                        & (segment_end > OrbitSegments.end_time)), \
+                                      ((segment_start == OrbitSegments.start_time)  \
+                                        & (segment_end == OrbitSegments.end_time)))) \
                           .all():
         return
 
