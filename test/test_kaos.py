@@ -18,3 +18,4 @@ class TestApi(KaosTestCase):
         with self.app.test_client() as client:
             response = client.get('/api/')
             self.assertTrue(response.data == "Bad API request, no satellites for you.")
+

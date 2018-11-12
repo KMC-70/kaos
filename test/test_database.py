@@ -2,7 +2,7 @@
 
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
-from . import KaosTestCase
+from . import KaosTestCaseNonPersistent
 from .context import kaos
 from kaos.models import *
 from kaos.parser import *
@@ -10,7 +10,7 @@ from collections import namedtuple
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
-class TestResponseHistory(KaosTestCase):
+class TestResponseHistory(KaosTestCaseNonPersistent):
     """Ensures that the response history table behaves as expected."""
 
     def test_history_empty(self):
@@ -302,4 +302,3 @@ class TestResponseHistory(KaosTestCase):
 
         add_segment_to_db(orbit_data, sat.platform_id)
         self.assertTrue(len(OrbitSegments.query.all()) == 1)
-
