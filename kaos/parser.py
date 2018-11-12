@@ -2,12 +2,16 @@
 import os
 from collections import namedtuple
 from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
+from sqlalchemy import or_, and_
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
 def add_segment_to_db(orbit_data, satellite_id):
-    """Add the given segment to the database.  We create a new entry in the Segment DB that holds -
-    segment_id - segment_start - segment_end - satellite_id
+    """Add the given segment to the database.  We create a new entry in the Segment DB that holds i
+    - segment_id
+    - segment_start
+    - segment_end
+    - satellite_id
 
     This segment element is also used to index a group of rows in the Orbits DB. This lets us know
     that the orbit data belongs to a given segment. This is because we cannot perform interpolation
@@ -19,11 +23,19 @@ def add_segment_to_db(orbit_data, satellite_id):
     segment_start = orbit_data[0].time
     segment_end = orbit_data[-1].time
 
-    """create segment entry.  Retrieve segment ID and insert it along with data into Orbit db"""
+    """Abort if this segment overlaps with anything currently in the DB, because we cannot
+    interpolate across segments."""
+    if OrbitSegments.query.filter(OrbitSegments.platform_id == satellite_id) \
+                          .filter(or_(((segment_start <= OrbitSegments.start_time) \
+                                        & (segment_end >= OrbitSegments.start_time)), \
+                                     ((segment_start <= OrbitSegments.end_time) \
+                                        & (segment_end >= OrbitSegments.end_time)))) \
+                          .all():
+        return
+
+    """create segment entry. Retrieve segment ID and insert it along with data into Orbit db"""
     segment = OrbitSegments(platform_id=satellite_id, start_time=segment_start,
                             end_time=segment_end)
-
-    # TODO Check if a segment exists that overlaps this segment
     segment.save()
     DB.session.commit()
 
