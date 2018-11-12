@@ -2,11 +2,11 @@
 
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
-from . import KaosTestCase
+from . import KaosTestCaseNonPersistent
 from .context import kaos
 from kaos.models import *
 
-class TestResponseHistory(KaosTestCase):
+class TestResponseHistory(KaosTestCaseNonPersistent):
     """Ensures that the response history table behaves as expected."""
 
     def test_history_empty(self):
@@ -102,3 +102,4 @@ class TestResponseHistory(KaosTestCase):
         for q_min, q_max in zip(query_min, query_max):
             self.assertTrue(q_min.start_time == start)
             self.assertTrue(q_max.end_time == end)
+
