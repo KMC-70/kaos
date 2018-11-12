@@ -10,9 +10,10 @@ def UTC_to_Linux(time_string):
 
     dt = datetime.datetime.strptime(time_string, '%Y%m%dT%H:%M:%S.%f')
     if (dt < datetime.datetime.strptime(TIME_MIN, '%Y%m%d') or
-            dt > datetime.datetime.strptime(TIME_MAX, '%Y%m%d')):
+    dt > datetime.datetime.strptime(TIME_MAX, '%Y%m%d')):
         raise ValueError('time_string out of range. Make sure it is between %s and %s'
                          % (TIME_MIN, TIME_MAX))
         return None
+
     return dt.timestamp()
 
