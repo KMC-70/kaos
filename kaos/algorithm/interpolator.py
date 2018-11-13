@@ -29,9 +29,12 @@ class Interpolator:
         # TODO move this to model
         try:
             # pylint: disable=undefined-variable
-            record = OrbitSegments.query.filter(platform_id == platform_id,
-                                                start_time <= timestamp,
-                                                end_time >= time)
+            return (OrbitSegments.query.filter(OrbitSegments.platform_id == platform_id,
+                                               OrbitSegments.start_time <= timestamp,
+                                               OrbitSegments.end_time >= timestamp)
+                                        .order_by(OrbitSegments.start_time.desc())
+                                        .first())
+
             # pylint: enable=undefined-variable
         except NoResultFound:
             return None
@@ -71,11 +74,14 @@ class Interpolator:
             for the given satellite and timestamp.
         """
         # find the correct segment
-        segment = get_segment(platform_id, timestamp)
-        orbit_records = get_orbit_records_by_segment(segment.segment_id)
+        segment = Interpolator.get_segment(platform_id, timestamp)
+        if not segment:
+            return None
+
+        orbit_records = Interpolator.get_orbit_records_by_segment(segment.segment_id)
 
         # can't do linear interpolation in this case
-        if not orbit_records or len(orbit_records < 2):
+        if not orbit_records or len(orbit_records) < 2:
             return None
         
         xp = np.array([rec.time for rec in orbit_records])
@@ -87,18 +93,16 @@ class Interpolator:
         tvel = np.zeros(3)
 
         for i in range(3):
-            tpos[i] = np.interp(x=time, xp=xp, fp=pos[:, i])
-            tvel[i] = np.interp(x=time, xp=xp, fp=vel[:, i])
+            tpos[i] = np.interp(x=timestamp, xp=xp, fp=pos[:, i])
+            tvel[i] = np.interp(x=timestamp, xp=xp, fp=vel[:, i])
 
         return tuple(tpos), tuple(tvel)
 
 
-    @staticmethod
-    def interpolate(platform_id, target):
-        """Estimate the position and velocity of a satellite at a given time.
+    def interpolate(self, target):
+        """Estimate the position and velocity of the satellite at a given time.
 
         Args:
-            platform_id: The UID of the satellite.
             target: The time for which to get the estimated position and velocity.
 
         Return:
@@ -106,5 +110,5 @@ class Interpolator:
             components of the position and velocity, respectively. If interpolation could
             not be done, return None.
         """
-        return Interpolator.linear_interp(platform_id, target)
+        return Interpolator.linear_interp(self.platform_id, target)
 

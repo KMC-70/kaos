@@ -8,17 +8,21 @@ class TestInterpolator(KaosTestCase):
     def setUpClass(cls):
         super(TestInterpolator, cls).setUpClass()
 
-        # import pdb; pdb.set_trace()
-
-        # add some test data to the db
+        # create a fake satellite
         cls.platform_id = 1
+        satellite = SatelliteInfo(platform_id=cls.platform_id, platform_name="testsat")
+        satellite.save()
+        DB.session.commit()
+
+        # add a segment for this satellite
         cls.segment_start = float(1)
         cls.segment_end = float(3)
-        cls.segment = OrbitSegments(platform_id=cls.platform_id, start_time=cls.segment_start, 
-                                    end_time=cls.segment_end)
+        cls.segment = OrbitSegments(platform_id=cls.platform_id, 
+                                    start_time=cls.segment_start, end_time=cls.segment_end)
         cls.segment.save()
+        DB.session.commit()
 
-        # create some segment data
+        # create some segment data for the satellite
         for record in range(1, 4):
             t = float(record)
             orbit_record = OrbitRecords(segment_id=cls.segment.segment_id, 
@@ -30,7 +34,7 @@ class TestInterpolator(KaosTestCase):
 
     def test_linear_interp__sucess(self):
         # test with a timestamp that is already in the database
-        pos, vel = Interpolator.linear_interp(self.platform_id)
+        pos, vel = Interpolator.linear_interp(self.platform_id, 1.0)
         for component in pos:
             self.assertAlmostEqual(component, 1.0)
         for component in vel:
@@ -49,16 +53,18 @@ class TestInterpolator(KaosTestCase):
         self.assertIsNone(result)
 
     def test_linear_interp__time_not_in_range(self):
-        result = Interpolator.linear_interp(self.plaform_id, 0.5)
+        result = Interpolator.linear_interp(self.platform_id, 0.5)
         self.assertIsNone(result)
 
-    def test_linear_interp__too_few_data_pointers(self):
-        # create a new segment with a single data point
+    def test_linear_interp__too_few_data_points(self):
+        # create a new segment for this satellite
         timestamp = self.segment_end + 1
         segment = OrbitSegments(platform_id=self.platform_id, start_time=timestamp,
                                 end_time=timestamp)
         segment.save()
+        DB.session.commit()
 
+        # create a single record for this segment
         record = OrbitRecords(segment_id=segment.segment_id, platform_id=self.platform_id,
                               time=timestamp, position=(1.0, 1.0, 1.0),
                               velocity=(1.0, 1.0, 1.0))
