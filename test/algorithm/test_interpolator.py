@@ -49,12 +49,12 @@ class TestInterpolator(KaosTestCase):
             self.assertAlmostEqual(component, 1.5)
 
     def test_linear_interp__no_platform_id(self):
-        result = Interpolator.linear_interp(1234, 1.0)
-        self.assertIsNone(result)
+        with self.assertRaises(ValueError):
+            result = Interpolator.linear_interp(1234, 1.0)
 
     def test_linear_interp__time_not_in_range(self):
-        result = Interpolator.linear_interp(self.platform_id, 0.5)
-        self.assertIsNone(result)
+        with self.assertRaises(ValueError):
+            result = Interpolator.linear_interp(self.platform_id, 0.5)
 
     def test_linear_interp__too_few_data_points(self):
         # create a new segment for this satellite
@@ -72,5 +72,6 @@ class TestInterpolator(KaosTestCase):
         DB.session.commit()
 
         # linear interpolation should fail due to insufficent data points
-        self.assertIsNone(Interpolator.linear_interp(self.platform_id, timestamp=timestamp))
+        with self.assertRaises(ValueError):
+            Interpolator.linear_interp(self.platform_id, timestamp=timestamp)
 
