@@ -52,8 +52,8 @@ class Interpolator:
         # TODO move this to model
         try:
             # pylint: disable=undefined-variable
-            orbit_records = OrbitRecords.query.filter_by(
-                    segment_id=segment_id).order_by(OrbitRecords.time)
+            orbit_records = (OrbitRecords.query.filter_by(segment_id=segment_id)
+                                               .order_by(OrbitRecords.time))
             # pylint: enable=undefined-variable
             return list(orbit_records)
         except NoResultFound:
