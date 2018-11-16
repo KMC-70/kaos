@@ -1,8 +1,9 @@
 import pytest, unittest
+from random import randint
 
 from ddt import ddt,data
 
-from kaos.algorithm import view_cone, coord_conversion,TimeInterval
+from kaos.algorithm import view_cone,coord_conversion,TimeInterval,ViewConeFailure
 
 # Time constants for test environment:
 ONE_DAY = 86164 #23:56:04 in seconds
@@ -32,7 +33,7 @@ class TestViewCone(unittest.TestCase):
 
         site_eci = coord_conversion.lla_to_eci(test_data[0][0], test_data[0][1], 0, J2000)
         a,b,c,d = view_cone._view_cone_calc(site_eci,test_data[1],test_data[2],test_data[3],
-                                                test_data[4])
+                                            test_data[4])
 
         self.assertAlmostEqual(a, test_data[5], delta=5)
         self.assertAlmostEqual(b, test_data[6], delta=5)
@@ -47,14 +48,15 @@ class TestViewCone(unittest.TestCase):
 
         ((0,-110),(3.8947064924267233e+03,-3.1853237741789821e+03,-5.4020492601011592e+03),
         (-5.6110588908929424e+06,-4.4103685540919630e+06,-1.9375720842113465e+06),7478140*(1+0.05),
-        TimeInterval(J2000,J2000+ONE_DAY),[(J2000,J2000+2.027181145241799e+04),(J2000+3.957976730797361e+04,
-            J2000+6.335463139827675e+04),(J2000+8.266103734950394e+04,J2000+ONE_DAY)])
+        TimeInterval(J2000,J2000+ONE_DAY),[(J2000,J2000+2.027181145241799e+04),
+        (J2000+3.957976730797361e+04,J2000+6.335463139827675e+04),(J2000+8.266103734950394e+04
+        ,J2000+ONE_DAY)])
     )
     def test_view_cone(self,test_data):
-        """Tests the public facing viewing cone algorithm
+        """Tests the viewing cone algorithm with non-corner-case data
 
         test_data format:
-         site lat&lon,sat_pos,sat_vel,q_magnitude,poi_start,poi_end,expected list of poi
+         site lat&lon,sat_pos,sat_vel,q_magnitude,poi,expected list of poi
 
         Values generated using: A Matlab implementation of viewing cone (using aerospace toolbox)
             which in turn was tested with STK
@@ -62,5 +64,44 @@ class TestViewCone(unittest.TestCase):
         site_eci = coord_conversion.lla_to_eci(test_data[0][0], test_data[0][1], 0, J2000)
         poi_list = view_cone.view_cone(site_eci,test_data[1],test_data[2],test_data[3],test_data[4])
         for answer,expected in zip(poi_list,test_data[5]):
-            self.assertAlmostEqual(answer[0], expected[0], delta=5)
-            self.assertAlmostEqual(answer[1], expected[1], delta=5)
+            self.assertAlmostEqual(answer.start, expected[0], delta=5)
+            self.assertAlmostEqual(answer.end, expected[1], delta=5)
+
+    @data(
+        # Test case with only 2 roots
+        ((40,80),(6.8779541256529745e+06,4.5999490750985817e+04,1.9992074250214235e+04),
+        (-5.1646755701370530e+01,5.3829730836383123e+03,5.3826328640238344e+03),6878140*(1+1.8e-16),
+        TimeInterval(J2000,J2000+ONE_DAY)),
+        # Test case with no roots (always inside the viewing cone)
+        ((0,0),(7.3779408317663465e+06,4.9343382472754820e+04,2.1445380156320374e+04),
+        (-5.0830385351827260e+01,7.3220252051302523e+03,6.4023511402880990e+02),7378140*(1+1.8e-16),
+        TimeInterval(J2000,J2000+ONE_DAY))
+    )
+    def test_view_cone_ViewConeFailure(self,test_data):
+        """Tests the viewing cone algorithm with unsupported configurations of orbit and location
+
+        test_data format:
+         site lat&lon,sat_pos,sat_vel,q_magnitude,poi
+
+        Values generated using: A Matlab implementation of viewing cone (using aerospace toolbox)
+            which in turn was tested with STK
+        """
+        site_eci = coord_conversion.lla_to_eci(test_data[0][0], test_data[0][1], 0, J2000)
+        with self.assertRaises(ViewConeFailure):
+            poi_list = view_cone.view_cone(site_eci,test_data[1],test_data[2],test_data[3],
+                                           test_data[4])
+
+    def test_view_cone_ValueError(self):
+        """Tests whether view_cone can detect improper POI"""
+
+        # Create an improperly ordered POI
+        small = randint(1,100000000)
+        big = randint(1,100000000)
+        if (big < small):
+            big, small = small, big
+        if (big == small):
+            big = big + 1
+        imporper_time = TimeInterval(J2000+big,J2000+small)
+
+        with self.assertRaises(ValueError):
+            poi_list = view_cone.view_cone((0,0,0),(0,0,0),(0,0,0),0,imporper_time)
