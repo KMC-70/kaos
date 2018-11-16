@@ -4,10 +4,10 @@ from ai.cs import cart2sp
 from numpy import cross
 from numpy.linalg import norm
 
-from kaos.algorithm import SECONDS_PER_DAY,ANG_VEL_EARTH,THETA_NAUGHT
+from kaos.algorithm import SECONDS_PER_DAY,ANG_VEL_EARTH,THETA_NAUGHT,TimeInterval,ViewConeFailure
 
 
-def view_cone(site_eci,sat_pos,sat_vel,q_magnitude,poi_start,poi_end):
+def view_cone(site_eci,sat_pos,sat_vel,q_magnitude,poi):
     """Preforms a series of viewing cone calculations and shrinks the input POI
 
     Args:
@@ -15,51 +15,69 @@ def view_cone(site_eci,sat_pos,sat_vel,q_magnitude,poi_start,poi_end):
       sat_pos(Vector3D) = position of satellite (at the same time as sat_vel)
       sat_vel(Vector3D) = velocity of satellite (at the same time as sat_pos)
       q_magnitude(int) = maximum orbital radius
-      poi((int,int)) = Period of interest (start of POI, end of POI)
+      poi(TimeInterval) = period of interest
 
     Returns:
-      None on error.
-      list of POI tuples on success
+      list of TimeIntervals that the orbit is inside viewing cone
+
+    Raises:
+      ValueError: on unexpected input
+      ViewConeFailure: on inconclusive result from Viewing cone
     """
-    # Return list
-    poi_list = []
+    if(poi.start > poi.end):
+        raise ValueError("poi.start is after poi.end")
+
     # Tracking how much of the POI has been processed
-    cur_end = poi_start
+    cur_end = poi.start
     # Estimate of maximum m
-    expected_final_m = ((poi_end - poi_start)/SECONDS_PER_DAY) + 1
+    expected_final_m = ((poi.end - poi.start)/SECONDS_PER_DAY) + 1
 
     # Find the intervals to cover the input POI
+    interval_list = []
     m = 0
-    while ((cur_end < poi_end) & (m < expected_final_m)):
+    while ((cur_end < poi.end) & (m < expected_final_m)):
         try:
             a,b,c,d = _view_cone_calc(site_eci,sat_pos,sat_vel,q_magnitude,m)
-            if ((a < c) | (d < b)):
-                # TODO: change to log
-                print("Error (view_cone): Unexpected result from _view_cone_calc()")
-                return None
-            poi_list.append((poi_start+c, poi_start+a))
-            poi_list.append((poi_start+b, poi_start+d))
+            interval_list.append(TimeInterval(poi.start+c, poi.start+a))
+            interval_list.append(TimeInterval(poi.start+b, poi.start+d))
             m += 1
-            cur_end = poi_start + d
+            cur_end = poi.start + d
         except ValueError:
-            # TODO: change to log
-            print("Warning (view_cone): viewing cone method failed!")
-            return None
+            #the case were the formulas have less than 4 roots
+            raise ViewConeFailure("Unsupported viewing cone and orbit configuration.")
 
-    # Adjusting the intervals to fit inside the input POI
+    # Validate the intervals
+    for interval in interval_list:
+        if (interval.start > interval.end):
+            # Unexpected order of times
+            raise ViewConeFailure("Viewing Cone internal error")
+
+    # Adjusting the intervals to fit inside the input POI and return
+    return _trim_poi_segments(interval_list,poi)
+
+def _trim_poi_segments(interval_list,poi):
+    """Semi-private: Adjusts list of intervals so that all intervals fit inside the poi
+
+        Args:
+          interval_list(list of TimeIntervals) = the interval to be trimmed
+          poi(TimeInterval) = period of interest, reference for trimming
+
+        Returns:
+          List of TimeIntervals that fit inside the poi
+    """
     ret_list = []
-    for poi in poi_list:
-        if ((poi[0] > poi_end) | (poi[1] < poi_start)):
+    for interval in interval_list:
+        if ((interval.start > poi.end) | (interval.end < poi.start)):
             #outside the input POI
             continue
-        elif ((poi[0] < poi_end) & (poi[1] > poi_end)):
-            ret_list.append((poi[0],poi_end))
-        elif ((poi[1] > poi_start) & (poi[0] < poi_start)):
-            ret_list.append((poi_start,poi[1]))
+        elif ((interval.start < poi.end) & (interval.end > poi.end)):
+            ret_list.append(TimeInterval(interval.start,poi.end))
+        elif ((interval.end > poi.start) & (interval.start < poi.start)):
+            ret_list.append(TimeInterval(poi.start,interval.end))
         else:
-            ret_list.append((poi[0],poi[1]))
-
+            ret_list.append(TimeInterval(interval.start,interval.end))
     return ret_list
+
 
 def _view_cone_calc(site_eci,sat_pos,sat_vel,q_magnitude,m):
     """Semi-private: Preforms the viewing cone visibility calculation for the day defined by m.
