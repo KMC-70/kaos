@@ -14,4 +14,5 @@ SECONDS_PER_DAY = 86164 #23:56:04
 THETA_NAUGHT = 0 #visibility threshold
 
 class ViewConeFailure(Exception):
+    """ Raised when Viewing cone algorithm cannot shrink the input interval"""
     pass
