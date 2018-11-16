@@ -5,90 +5,13 @@ from collections import namedtuple
 from kaos.models import *
 from kaos.parser import *
 
-from . import KaosTestCase
+from . import KaosTestCaseNonPersistent
 from .context import kaos
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
-class TestEphemerisParser(KaosTestCase):
+class TestEphemerisParser(KaosTestCaseNonPersistent):
     """Ensures that the ephemeris parser behaves as expected."""
-
-    def test_db_add_correct_num_rows(self):
-        """Test that the add_segment_to_db adds the correct number of rows to the DB.  """
-        sat = SatelliteInfo(platform_name="TEST")
-        sat.save()
-        DB.session.commit()
-
-        orbit_data = []
-        for i in range(0, 20):
-            orbit_point = [float(j) for j in range(i, i+7)]
-            orbit_tuple = OrbitPoint(orbit_point[0], orbit_point[1:4], orbit_point[4:7])
-            orbit_data.append(orbit_tuple)
-
-        add_segment_to_db(orbit_data, sat.platform_id)
-
-        orbit_db = OrbitRecords()
-        self.assertTrue(len(orbit_db.query.all()) == 20)
-
-    def test_db_add_correct_orbit_data(self):
-        """Test that the add_segment_to_db adds the correct row data to the DB. Validates time,
-        position, and velocity for each DB row added."""
-        sat = SatelliteInfo(platform_name="TEST")
-        sat.save()
-        DB.session.commit()
-
-        orbit_data = []
-        for i in range(0, 20):
-            orbit_point = [float(j) for j in range(i, i+7)]
-            orbit_tuple = OrbitPoint(orbit_point[0], orbit_point[1:4], orbit_point[4:7])
-            orbit_data.append(orbit_tuple)
-
-        add_segment_to_db(orbit_data, sat.platform_id)
-
-        orbit_db = OrbitRecords()
-        self.assertTrue(len(orbit_db.query.all()) == 20)
-
-        orbits = orbit_db.query.all()
-        for orbit_point, orbit in zip(orbit_data, orbits):
-            self.assertTrue(orbit_point.time == orbit.time)
-            self.assertTrue(orbit_point.pos == orbit.position)
-            self.assertTrue(orbit_point.vel == orbit.velocity)
-
-    def test_db_add_num_segments(self):
-        """Test that the add_segment_to_db adds the correct number of "segments" to the db. Each
-        call to add_segment_to_db should create only one segment at a time.  """
-
-        # create and add first segment to DB
-        sat = SatelliteInfo(platform_name="TEST1")
-        sat.save()
-        DB.session.commit()
-
-        orbit_data = []
-        for i in range(0, 20):
-            orbit_point = [float(j) for j in range(i, i+7)]
-            orbit_tuple = OrbitPoint(orbit_point[0], orbit_point[1:4], orbit_point[4:7])
-            orbit_data.append(orbit_tuple)
-
-        add_segment_to_db(orbit_data, sat.platform_id)
-
-        orbit_segment = OrbitSegments()
-        self.assertTrue(len(orbit_segment.query.all()) == 1)
-
-        # create and add second segment
-        sat2 = SatelliteInfo(platform_name="TEST2")
-        sat2.save()
-        DB.session.commit()
-
-        orbit_data = []
-        for i in range(40, 60):
-            orbit_point = [float(j) for j in range(i, i+7)]
-            orbit_tuple = OrbitPoint(orbit_point[0], orbit_point[1:4], orbit_point[4:7])
-            orbit_data.append(orbit_tuple)
-
-        add_segment_to_db(orbit_data, sat2.platform_id)
-
-        # make sure we have two distincts segments in the DB
-        self.assertTrue(len(orbit_segment.query.all()) == 2)
 
     def test_ephemeris_parser_single_file(self):
         """Light test to ensure that the parser can correctly parse an ephemeris file."""
