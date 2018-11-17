@@ -7,7 +7,7 @@ from kaos.parser import *
 
 from . import KaosTestCaseNonPersistent
 from .context import kaos
-import numpy
+import numpy as np
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
@@ -70,8 +70,7 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
                 line = line.rstrip('\n')
                 if num > 46 and num < 17366:
                     position_row = [float(num) for num in line.split()]
-                    if largest_q < numpy.linalg.norm(position_row[1:4]):
-                        largest_q = numpy.linalg.norm(position_row[1:4])
+                    largest_q = max(largest_q, np.linalg.norm(position_row[1:4]))
         temp = SatelliteInfo.query.filter_by(platform_id=1).first().maximum_altitude
         self.assertAlmostEqual(temp, largest_q)
 
