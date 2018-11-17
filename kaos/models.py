@@ -49,7 +49,7 @@ class SatelliteInfo(SavableModel, DB.Model):
     platform_name = DB.Column(DB.String(50), nullable=False)
     orbit_segments = DB.relationship("OrbitSegments", backref='satellite_info', lazy=True)
     orbit_records = DB.relationship("OrbitRecords", backref='satellite_info', lazy=True)
-    orbit_q_max = DB.Column(DB.Float, nullable=True)
+    maximum_altitude = DB.Column(DB.Float, nullable=True)
 
 
     @classmethod
