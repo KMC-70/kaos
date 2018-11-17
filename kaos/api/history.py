@@ -29,3 +29,4 @@ def get_history(history_id):
         raise NotFoundError("history_id", history_id)
 
     return jsonify(json.loads(history.response))
+

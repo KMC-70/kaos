@@ -25,6 +25,8 @@ def create_app(config="settings.cfg"):
         return 'Welcome to KAOS!'
     # pylint: enable=unused-variable,missing-docstring
 
+    # Setup default error handlers. 404 and 505 are special case handlers because the framework can
+    # throw them automatically.
     # pylint: disable=unused-variable,missing-docstring
     @app.errorhandler(405)
     @app.errorhandler(404)
@@ -36,7 +38,6 @@ def create_app(config="settings.cfg"):
     @app.errorhandler(APIError)
     def api_error(error):
         return error.to_response()
-
     # pylint: enable=unused-variable,missing-docstring
 
     return app
