@@ -41,6 +41,7 @@ class SatelliteInfo(SavableModel, DB.Model):
         platform_name:      The name of the satellite
         orbit_segments:     Time segments that the ephemeris records fall within
         orbit_records:      Satellite ephemeris records
+        orbit_q_max:        The maximum distance from the earth center to the satellite position
     """
     __tablename__ = 'SatelliteInfo'
 
@@ -48,6 +49,8 @@ class SatelliteInfo(SavableModel, DB.Model):
     platform_name = DB.Column(DB.String(50), nullable=False)
     orbit_segments = DB.relationship("OrbitSegments", backref='satellite_info', lazy=True)
     orbit_records = DB.relationship("OrbitRecords", backref='satellite_info', lazy=True)
+    orbit_q_max = DB.Column(DB.Float, nullable=True)
+
 
     @classmethod
     def __declare_last__(cls):

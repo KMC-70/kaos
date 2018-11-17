@@ -3,8 +3,14 @@ import os
 from collections import namedtuple
 from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
 from sqlalchemy import or_, and_
+import math
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
+
+def get_length_q(sat_position):
+    """Calculate the distance from earth center to the position of the satellite"""
+
+    return math.sqrt(sat_position[0]**2 + sat_position[1]**2 + sat_position[2]**2)
 
 def add_segment_to_db(orbit_data, satellite_id):
     """Add the given segment to the database.  We create a new entry in the Segment DB that holds i
@@ -63,6 +69,8 @@ def parse_ephemeris_file(filename):
     sat.save()
     DB.session.commit()
 
+    MaxDistance = 0
+
     with open(filename, "rU") as f:
         segment_boundaries = []
         segment_tuples = []
@@ -106,6 +114,11 @@ def parse_ephemeris_file(filename):
                                              ephemeris_row[4:7])
                     segment_tuples.append(orbit_tuple)
 
+                    """Keep track of the magnitude of the position vector and update with a bigger
+                    value"""
+                    if MaxDistance < get_length_q(ephemeris_row[1:4]):
+                        MaxDistance = get_length_q(ephemeris_row[1:4])
+
                     """ The line we just read is a segment boundary, So first check that this is the
                     *end* of a segment, not the beginning of a new one, and then add this segment to
                     the db."""
@@ -118,5 +131,9 @@ def parse_ephemeris_file(filename):
             if "EphemerisTimePosVel" in line:
                 read_orbital_data = True
 
+            """ After getting the q_max, insert it into SatelliteInfo"""
+            sat = SatelliteInfo(orbit_q_max=MaxDistance)
+            sat.save()
         DB.session.commit()
+        #import pdb; pdb.set_trace()
 
