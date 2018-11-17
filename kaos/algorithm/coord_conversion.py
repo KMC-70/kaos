@@ -74,15 +74,24 @@ def lla_to_eci(lat, lon, alt, time_posix):
     time_posix(int) = reference frame time
 
     Returns:
-    Vector3D(x,y,z) such that:
-      x = GCRS X-coordinate (m)
-      y = GCRS Y-coordinate (m)
-      z = GCRS Z-coordinate (m)
+    a tuple of Vector3D(x,y,z):
+        Position Vector:
+          x = GCRS X-coordinate (m)
+          y = GCRS Y-coordinate (m)
+          z = GCRS Z-coordinate (m)
+        Velocity Vector
+          x = GCRS X-velocity (m)
+          y = GCRS Y-velocity (m)
+          z = GCRS Z-velocity (m)
 
     Important Note: Unlike the rest of the software that uses J2000 FK5, the ECI frame used here is
     GCRS; This can potentially introduce around 200m error for locations on surface of Earth.
     """
     posix_time_internal = Time(time_posix, format='unix')
-    loc_lla = coordinates.EarthLocation.from_geodetic(lon,lat,alt)
+    loc_lla = coordinates.EarthLocation.from_geodetic(lon, lat, alt)
     loc_eci = loc_lla.get_gcrs_posvel(posix_time_internal)
-    return Vector3D(loc_eci[0].x.value,loc_eci[0].y.value,loc_eci[0].z.value)
+
+    eci_pos = Vector3D(loc_eci[0].x.value, loc_eci[0].y.value, loc_eci[0].z.value)
+    eci_vel = Vector3D(loc_eci[1].x.value, loc_eci[1].y.value, loc_eci[1].z.value)
+
+    return (eci_pos, eci_vel)
