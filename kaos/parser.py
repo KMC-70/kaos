@@ -57,10 +57,13 @@ def add_segment_to_db(orbit_data, satellite_id):
     DB.session.commit()
 
 def parse_ephemeris_file(filename):
-    """Parse the given ephemeris file and store the orbital data into the DB. We assume that
+    """Parse the given ephemeris file and store the orbital data into OrbitRecords. We assume that
       each row in the ephemeris file is a 7-tuple containing an orbital point, formatted as:
 
       time posx posy posz velx vely velz
+
+      Calculate the maximum distance from earth center to the position if the satellite. Insert it
+      in SatelliteInfo
       """
 
     #TODO: pre-process the file. Verify file formatting is as we expect
@@ -132,8 +135,7 @@ def parse_ephemeris_file(filename):
                 read_orbital_data = True
 
             """ After getting the q_max, insert it into SatelliteInfo"""
-            sat = SatelliteInfo(orbit_q_max=MaxDistance)
+            sat.orbit_q_max = MaxDistance
             sat.save()
         DB.session.commit()
-        #import pdb; pdb.set_trace()
 
