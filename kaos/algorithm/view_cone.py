@@ -1,12 +1,12 @@
-""" Implementation of Viewing cone algorithm """
+"""Implementation of Viewing cone algorithm"""
 from math import asin, atan, sqrt, sin, cos, pi
 
 from ai.cs import cart2sp
 from numpy import cross
 from numpy.linalg import norm
 
-from kaos.algorithm import SECONDS_PER_DAY, ANG_VEL_EARTH, THETA_NAUGHT, TimeInterval,\
-                            ViewConeFailure
+from kaos.algorithm import (SECONDS_PER_DAY, ANG_VEL_EARTH, THETA_NAUGHT, TimeInterval,
+                            ViewConeError)
 
 
 def reduce_poi(site_eci, sat_pos, sat_vel, q_magnitude, poi):
@@ -24,7 +24,7 @@ def reduce_poi(site_eci, sat_pos, sat_vel, q_magnitude, poi):
 
     Raises:
       ValueError: on unexpected input
-      ViewConeFailure: on inconclusive result from Viewing cone
+      ViewConeError: on inconclusive result from Viewing cone
     """
     if poi.start > poi.end:
         raise ValueError("poi.start is after poi.end")
@@ -37,21 +37,21 @@ def reduce_poi(site_eci, sat_pos, sat_vel, q_magnitude, poi):
     # Find the intervals to cover the input POI
     interval_list = []
     m = 0
-    while (cur_end < poi.end) & (m < expected_final_m):
+    while (cur_end < poi.end) and (m < expected_final_m):
         try:
             t_1, t_2, t_3, t_4 = _view_cone_calc(site_eci, sat_pos, sat_vel, q_magnitude, m)
             # Validate the intervals
-            if (t_3 > t_1) | (t_2 > t_4):
+            if (t_3 > t_1) or (t_2 > t_4):
                 # Unexpected order of times
-                raise ViewConeFailure("Viewing Cone internal error")
+                raise ViewConeError("Viewing Cone internal error")
             # Add intervals to the list
             interval_list.append(TimeInterval(poi.start+t_3, poi.start+t_1))
             interval_list.append(TimeInterval(poi.start+t_2, poi.start+t_4))
             m += 1
             cur_end = poi.start + t_4
         except ValueError:
-            #the case were the formulas have less than 4 roots
-            raise ViewConeFailure("Unsupported viewing cone and orbit configuration.")
+            # The case were the formulas have less than 4 roots
+            raise ViewConeError("Unsupported viewing cone and orbit configuration.")
 
     # Adjusting the intervals to fit inside the input POI and return
     return _trim_poi_segments(interval_list, poi)
@@ -68,15 +68,16 @@ def _trim_poi_segments(interval_list, poi):
     """
     ret_list = []
     for interval in interval_list:
-        if (interval.start > poi.end) | (interval.end < poi.start):
-            #outside the input POI
+        if (interval.start > poi.end) or (interval.end < poi.start):
+            # Outside the input POI
             continue
-        elif (interval.start < poi.end) & (interval.end > poi.end):
+        elif (interval.start < poi.end) and (interval.end > poi.end):
             ret_list.append(TimeInterval(interval.start, poi.end))
-        elif (interval.end > poi.start) & (interval.start < poi.start):
+        elif (interval.end > poi.start) and (interval.start < poi.start):
             ret_list.append(TimeInterval(poi.start, interval.end))
         else:
             ret_list.append(TimeInterval(interval.start, interval.end))
+
     return ret_list
 
 
@@ -112,20 +113,20 @@ def _view_cone_calc(site_eci, sat_pos, sat_vel, q_magnitude, m):
     # Formulas from paper:
     # Note: each Txxx represents an intersection between viewing cone and the orbit
     gamma = THETA_NAUGHT + asin((r_site_magnitude * sin((pi/2)+THETA_NAUGHT))/q_magnitude)
-    tin = (1/ANG_VEL_EARTH) * (asin((cos(gamma)-(p_unit_z*sin(lat_geoc))) / \
-            (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc))) \
-            - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m)
-    tout = (1/ANG_VEL_EARTH) * (pi - asin((cos(gamma)-(p_unit_z*sin(lat_geoc)))/ \
-            (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc))) \
-            - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m)
+    tin = ((1/ANG_VEL_EARTH) * (asin((cos(gamma)-(p_unit_z*sin(lat_geoc))) /
+            (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc)))
+            - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m))
+    tout = ((1/ANG_VEL_EARTH) * (pi - asin((cos(gamma)-(p_unit_z*sin(lat_geoc)))/
+            (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc)))
+            - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m))
 
-    # second set
+    # Second set
     gamma2 = pi - gamma
-    tin_2 = (1/ANG_VEL_EARTH) * (asin((cos(gamma2)-(p_unit_z*sin(lat_geoc))) / \
-            (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc))) \
-            - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m)
-    tout_2 = (1/ANG_VEL_EARTH) * (pi - asin((cos(gamma2)-(p_unit_z*sin(lat_geoc))) / \
-            (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc))) \
-            - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m)
+    tin_2 = ((1/ANG_VEL_EARTH) * (asin((cos(gamma2)-(p_unit_z*sin(lat_geoc))) /
+            (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc)))
+            - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m))
+    tout_2 = ((1/ANG_VEL_EARTH) * (pi - asin((cos(gamma2)-(p_unit_z*sin(lat_geoc))) /
+            (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc)))
+            - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m))
 
     return tin, tout, tin_2, tout_2

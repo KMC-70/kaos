@@ -4,7 +4,7 @@ from random import randint
 
 from ddt import ddt, data
 
-from kaos.algorithm import view_cone, coord_conversion, TimeInterval, ViewConeFailure
+from kaos.algorithm import view_cone, coord_conversion, TimeInterval, ViewConeError
 
 # TODO: move test constants to a unified location
 # Time constants for test environment:
@@ -94,7 +94,7 @@ class TestViewCone(unittest.TestCase):
             which in turn was tested with STK
         """
         site_eci = coord_conversion.lla_to_eci(test_data[0][0], test_data[0][1], 0, J2000)
-        with self.assertRaises(ViewConeFailure):
+        with self.assertRaises(ViewConeError):
             view_cone.reduce_poi(site_eci, test_data[1], test_data[2], test_data[3], test_data[4])
 
     def test_reduce_poi_input_error(self):
