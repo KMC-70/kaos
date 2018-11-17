@@ -1,8 +1,10 @@
 """"Handles the reading and parsing of ephemeris files.  Parsed files are stored in the DB.  """
 import os
+from astropy.time import Time
 from collections import namedtuple
+from kaos.utils import UTC_to_Linux
 from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
-from sqlalchemy import or_, and_
+from sqlalchemy import or_
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
@@ -18,7 +20,9 @@ def add_segment_to_db(orbit_data, satellite_id):
     using points in different segments.
     """
 
-    # TODO Validate satellite_id
+    if satellite_id < 0:
+        return
+
     segment_start = orbit_data[0].time
     segment_end = orbit_data[-1].time
 
@@ -29,7 +33,7 @@ def add_segment_to_db(orbit_data, satellite_id):
                                         & (segment_end > OrbitSegments.start_time)), \
                                      ((segment_start < OrbitSegments.end_time) \
                                         & (segment_end > OrbitSegments.end_time)), \
-                                      ((segment_start == OrbitSegments.start_time)  \
+                                     ((segment_start == OrbitSegments.start_time)  \
                                         & (segment_end == OrbitSegments.end_time)))) \
                           .all():
         return
@@ -55,8 +59,6 @@ def parse_ephemeris_file(filename):
       time posx posy posz velx vely velz
       """
 
-    #TODO: pre-process the file. Verify file formatting is as we expect
-
     sat = SatelliteInfo(platform_name=os.path.splitext(filename)[0])
     sat.save()
     DB.session.commit()
@@ -64,6 +66,7 @@ def parse_ephemeris_file(filename):
     with open(filename, "rU") as f:
         segment_boundaries = []
         segment_tuples = []
+        start_time = 0
 
         read_segment_boundaries = False
         read_orbital_data = False
@@ -77,6 +80,7 @@ def parse_ephemeris_file(filename):
             line = line.rstrip('\n')
             if "Epoch in JDate format:" in line:
                 start_time = float(line.split(':')[1])
+                start_time = convert_jdate_to_unix(start_time)
 
             if "CoordinateSystem" in line:
                 coord_system = str(line.split()[1])
@@ -100,6 +104,12 @@ def parse_ephemeris_file(filename):
                 line = line.strip()
                 if line:
                     ephemeris_row = [float(num) for num in line.split()]
+
+                    # convert timestamps to UNIX timestamp with start_time offset
+                    jdate_timestamp = Time(ephemeris_row[0], format='jd')
+                    ephemeris_row[0] = UTC_to_Linux(jdate_timestamp.isot)
+                    ephemeris_row[0] += start_time
+
                     orbit_tuple = OrbitPoint(ephemeris_row[0], ephemeris_row[1:4],
                                              ephemeris_row[4:7])
                     segment_tuples.append(orbit_tuple)
