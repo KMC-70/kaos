@@ -74,7 +74,7 @@ def lla_to_eci(lat, lon, alt, time_posix):
     time_posix(int) = reference frame time
 
     Returns:
-    a tuple of Vector3D(x,y,z):
+    A tuple of Vector3D(x,y,z):
         Position Vector:
           x = GCRS X-coordinate (m)
           y = GCRS Y-coordinate (m)
