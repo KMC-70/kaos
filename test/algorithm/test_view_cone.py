@@ -6,6 +6,7 @@ from ddt import ddt, data
 
 from kaos.algorithm import view_cone, coord_conversion, TimeInterval, ViewConeFailure
 
+# TODO: move test constants to a unified location
 # Time constants for test environment:
 ONE_DAY = 86164 #23:56:04 in seconds
 J2000 = 946684800 # Jan 1st 1970 in POSIX
@@ -96,7 +97,7 @@ class TestViewCone(unittest.TestCase):
         with self.assertRaises(ViewConeFailure):
             view_cone.view_cone(site_eci, test_data[1], test_data[2], test_data[3], test_data[4])
 
-    def test_view_cone_inpur_error(self):
+    def test_view_cone_input_error(self):
         """Tests whether view_cone can detect improper POI"""
 
         # Create an improperly ordered POI
@@ -106,7 +107,7 @@ class TestViewCone(unittest.TestCase):
             big, small = small, big
         if big == small:
             big = big + 1
-        imporper_time = TimeInterval(J2000+big, J2000+small)
+        improper_time = TimeInterval(J2000+big, J2000+small)
 
         with self.assertRaises(ValueError):
-            view_cone.view_cone((0, 0, 0), (0, 0, 0), (0, 0, 0), 0, imporper_time)
+            view_cone.view_cone((0, 0, 0), (0, 0, 0), (0, 0, 0), 0, improper_time)

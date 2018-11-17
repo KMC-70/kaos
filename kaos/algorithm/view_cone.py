@@ -10,12 +10,12 @@ from kaos.algorithm import SECONDS_PER_DAY, ANG_VEL_EARTH, THETA_NAUGHT, TimeInt
 
 
 def view_cone(site_eci, sat_pos, sat_vel, q_magnitude, poi):
-    """Preforms a series of viewing cone calculations and shrinks the input POI
+    """Performs a series of viewing cone calculations and shrinks the input POI
 
     Args:
       site_eci(Vector3D) = site location in ECI at the start of POI
-      sat_pos(Vector3D) = position of satellite (at the same time as sat_vel)
-      sat_vel(Vector3D) = velocity of satellite (at the same time as sat_pos)
+      sat_pos(Vector3D) = position of satellite (at an arbitrary time)
+      sat_vel(Vector3D) = velocity of satellite (at the same arbitrary time as sat_pos)
       q_magnitude(int) = maximum orbital radius
       poi(TimeInterval) = period of interest
 
@@ -40,6 +40,11 @@ def view_cone(site_eci, sat_pos, sat_vel, q_magnitude, poi):
     while (cur_end < poi.end) & (m < expected_final_m):
         try:
             t_1, t_2, t_3, t_4 = _view_cone_calc(site_eci, sat_pos, sat_vel, q_magnitude, m)
+            # Validate the intervals
+            if (t_3 > t_1) | (t_2 > t_4):
+                # Unexpected order of times
+                raise ViewConeFailure("Viewing Cone internal error")
+            # Add intervals to the list
             interval_list.append(TimeInterval(poi.start+t_3, poi.start+t_1))
             interval_list.append(TimeInterval(poi.start+t_2, poi.start+t_4))
             m += 1
@@ -47,12 +52,6 @@ def view_cone(site_eci, sat_pos, sat_vel, q_magnitude, poi):
         except ValueError:
             #the case were the formulas have less than 4 roots
             raise ViewConeFailure("Unsupported viewing cone and orbit configuration.")
-
-    # Validate the intervals
-    for interval in interval_list:
-        if interval.start > interval.end:
-            # Unexpected order of times
-            raise ViewConeFailure("Viewing Cone internal error")
 
     # Adjusting the intervals to fit inside the input POI and return
     return _trim_poi_segments(interval_list, poi)
@@ -82,7 +81,7 @@ def _trim_poi_segments(interval_list, poi):
 
 
 def _view_cone_calc(site_eci, sat_pos, sat_vel, q_magnitude, m):
-    """Semi-private: Preforms the viewing cone visibility calculation for the day defined by m.
+    """Semi-private: Performs the viewing cone visibility calculation for the day defined by m.
 
     Note: This function is based on a paper titled "rapid satellite-to-site visibility determination
     based on self-adaptive interpolation technique"  with some variation to account for interaction
