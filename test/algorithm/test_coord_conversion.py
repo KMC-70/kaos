@@ -57,7 +57,8 @@ class Test_lla_to_eci(unittest.TestCase):
           lat,lon,alt,time_posix,(GCRS expected x,GCRS expected y,GCRS expected z)
         Values generated using Matlab: lla2eci([lat,lon,alt],time) which is in a J2000 FK5 frame
         """
-        loc_eci = coord_conversion.lla_to_eci(test_data[0],test_data[1],test_data[2],test_data[3])
-        self.assertAlmostEqual(loc_eci[0],test_data[4][0],delta=200)
-        self.assertAlmostEqual(loc_eci[1],test_data[4][1],delta=200)
-        self.assertAlmostEqual(loc_eci[2],test_data[4][2],delta=200)
+        loc_eci = coord_conversion.lla_to_eci(test_data[0], test_data[1], test_data[2],
+                                              test_data[3])[0]
+        self.assertAlmostEqual(loc_eci[0], test_data[4][0], delta=200)
+        self.assertAlmostEqual(loc_eci[1], test_data[4][1], delta=200)
+        self.assertAlmostEqual(loc_eci[2], test_data[4][2], delta=200)
