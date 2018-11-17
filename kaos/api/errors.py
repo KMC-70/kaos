@@ -32,7 +32,8 @@ class APIError(Exception):
             'more_info': **kwargs,
         }
 
-        Returns: JSON object representing the error.
+        Returns:
+            A JSON object representing the error.
         """
         response = jsonify({'reasons': self.reasons, 'extra_info': self.extra_info})
         response.status_code = self.status_code
