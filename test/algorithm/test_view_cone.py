@@ -58,7 +58,7 @@ class TestViewCone(unittest.TestCase):
           (J2000+3.957976730797361e+04, J2000+6.335463139827675e+04),
           (J2000+8.266103734950394e+04, J2000+ONE_DAY)])
     )
-    def test_view_cone(self, test_data):
+    def test_reduce_poi(self, test_data):
         """Tests the viewing cone algorithm with non-corner-case data
 
         test_data format:
@@ -68,7 +68,7 @@ class TestViewCone(unittest.TestCase):
             which in turn was tested with STK
         """
         site_eci = coord_conversion.lla_to_eci(test_data[0][0], test_data[0][1], 0, J2000)
-        poi_list = view_cone.view_cone(site_eci, test_data[1], test_data[2], test_data[3],
+        poi_list = view_cone.reduce_poi(site_eci, test_data[1], test_data[2], test_data[3],
                                        test_data[4])
         for answer, expected in zip(poi_list, test_data[5]):
             self.assertAlmostEqual(answer.start, expected[0], delta=5)
@@ -84,7 +84,7 @@ class TestViewCone(unittest.TestCase):
          (-5.0830385351827260e+01, 7.3220252051302523e+03, 6.4023511402880990e+02),
          7378140*(1+1.8e-16), TimeInterval(J2000, J2000+ONE_DAY))
     )
-    def test_view_cone_unsupported_case(self, test_data):
+    def test_reduce_poi_unsupported_case(self, test_data):
         """Tests the viewing cone algorithm with unsupported configurations of orbit and location
 
         test_data format:
@@ -95,10 +95,10 @@ class TestViewCone(unittest.TestCase):
         """
         site_eci = coord_conversion.lla_to_eci(test_data[0][0], test_data[0][1], 0, J2000)
         with self.assertRaises(ViewConeFailure):
-            view_cone.view_cone(site_eci, test_data[1], test_data[2], test_data[3], test_data[4])
+            view_cone.reduce_poi(site_eci, test_data[1], test_data[2], test_data[3], test_data[4])
 
-    def test_view_cone_input_error(self):
-        """Tests whether view_cone can detect improper POI"""
+    def test_reduce_poi_input_error(self):
+        """Tests whether reduce_poi can detect improper POI"""
 
         # Create an improperly ordered POI
         small = randint(1, 100000000)
@@ -110,4 +110,4 @@ class TestViewCone(unittest.TestCase):
         improper_time = TimeInterval(J2000+big, J2000+small)
 
         with self.assertRaises(ValueError):
-            view_cone.view_cone((0, 0, 0), (0, 0, 0), (0, 0, 0), 0, improper_time)
+            view_cone.reduce_poi((0, 0, 0), (0, 0, 0), (0, 0, 0), 0, improper_time)

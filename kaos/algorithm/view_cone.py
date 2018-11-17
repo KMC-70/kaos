@@ -9,7 +9,7 @@ from kaos.algorithm import SECONDS_PER_DAY, ANG_VEL_EARTH, THETA_NAUGHT, TimeInt
                             ViewConeFailure
 
 
-def view_cone(site_eci, sat_pos, sat_vel, q_magnitude, poi):
+def reduce_poi(site_eci, sat_pos, sat_vel, q_magnitude, poi):
     """Performs a series of viewing cone calculations and shrinks the input POI
 
     Args:
