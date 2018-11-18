@@ -1,4 +1,4 @@
-"""Sanity tests for KAOS"""
+"""Code quality tests for KAOS."""
 
 def test_code_quality():
     """Pylint test."""

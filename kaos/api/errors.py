@@ -12,10 +12,9 @@ class APIError(Exception):
     def __init__(self, reasons, status_code=400, **kwargs):
         """Args:
             reasons (dict): A dictionary containing the reason(s) for a failure.
+            status_code (int, optional): status code of the generated response. Defaults to 400.
             **kwargs: Additional information that will be attached to the generated response.
 
-        Kwargs:
-            status_code (int): status code of the generated response. Defaults to 400.
         """
         Exception.__init__(self)
 
@@ -39,7 +38,6 @@ class APIError(Exception):
         response.status_code = self.status_code
         return response
 
-
 class NotFoundError(APIError):
     """Error to be raised when an entry/id is not found.
 
@@ -53,8 +51,8 @@ class NotFoundError(APIError):
 
     def __init__(self, field_name, value):
         """Args:
-            field_name (string): The field/property whose entry was not found
-            field_name (Obj): The value that the user tried to access
+            field_name (str): The field/property whose entry was not found
+            value (obj): The value that the user tried to access
         """
         reason = {field_name: 'Entry with value: {} not found'.format(value)}
         APIError.__init__(self, reason, status_code=404)
