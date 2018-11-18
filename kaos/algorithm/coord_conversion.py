@@ -80,9 +80,9 @@ def lla_to_eci(lat, lon, alt, time_posix):
           y = GCRS Y-coordinate (m)
           z = GCRS Z-coordinate (m)
         Velocity Vector
-          x = GCRS X-velocity (m)
-          y = GCRS Y-velocity (m)
-          z = GCRS Z-velocity (m)
+          x = GCRS X-velocity (m/s)
+          y = GCRS Y-velocity (m/s)
+          z = GCRS Z-velocity (m/s)
 
     Important Note: Unlike the rest of the software that uses J2000 FK5, the ECI frame used here is
     GCRS; This can potentially introduce around 200m error for locations on surface of Earth.
