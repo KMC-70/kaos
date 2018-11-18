@@ -27,8 +27,7 @@ def utc_to_unix(time_string):
     return calendar.timegm(date_time.utctimetuple())
 
 def jdate_to_utc(jdate):
-    """Takes a date in Julian format and converts it to a UNIX
-    time stamp.
+    """Takes a date in Julian format and converts it to a UTC formatted time stamp.
 
     Args:
         jdate (float): Float representing the number of days since January 1, 4713 BC.
