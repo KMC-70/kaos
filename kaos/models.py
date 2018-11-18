@@ -71,7 +71,7 @@ class OrbitSegments(SavableModel, DB.Model):
 
     segment_id = DB.Column(DB.Integer, primary_key=True)
     platform_id = DB.Column(DB.Integer, DB.ForeignKey('SatelliteInfo.platform_id'), nullable=False)
-    start_time = DB.Column(DB.Float, nullable=False)
+    start_time = DB.Column(DB.Float(precision=32), nullable=False)
     end_time = DB.Column(DB.Float, nullable=False)
     orbit_records = DB.relationship("OrbitRecords", backref='orbit_segment', lazy=True)
 
