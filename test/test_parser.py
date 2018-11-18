@@ -22,6 +22,9 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
 
         self.assertTrue(len(OrbitSegments.query.all()) == 14) # taken from ephem file
 
+        # epoch start in JDate format
+        jdate_start = 2458119.50000000000000
+
         segment_boundaries = [0.0000000000000000e+00, 1.6340157216000001e+04,
                               4.7326755167999996e+04, 1.0207953590400000e+05,
                               1.8597513513600000e+05, 2.7627005577600002e+05,
@@ -31,7 +34,7 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
                               8.5152938083199994e+05, 9.3618207907199999e+05,
                               1.0368000000000000e+06]
 
-        seg_times = [float(seg) for seg in segment_boundaries]
+        seg_times = [convert_jdate_to_unix(float(seg) + jdate_start) for seg in segment_boundaries]
 
         query = OrbitSegments.query.all()
 

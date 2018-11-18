@@ -2,7 +2,7 @@
 import os
 from astropy.time import Time
 from collections import namedtuple
-from kaos.utils import UTC_to_Linux
+from kaos.utils.datetime import UTC_to_Linux
 from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
 from sqlalchemy import or_
 
@@ -51,6 +51,14 @@ def add_segment_to_db(orbit_data, satellite_id):
         orbit_record.save()
 
     DB.session.commit()
+
+def convert_jdate_to_unix(jdate, start_time=0):
+    """ Returns the UNIX timestamp corresponding to this JDate timestamp.
+    """
+    jdate_timestamp = Time(jdate + start_time, format='jd')
+    iso_date = ''.join(jdate_timestamp.iso.split()[0].split('-')) + 'T' \
+                + str(jdate_timestamp.iso.split()[1])
+    return UTC_to_Linux(iso_date)
 
 def parse_ephemeris_file(filename):
     """Parse the given ephemeris file and store the orbital data into the DB. We assume that
@@ -106,9 +114,7 @@ def parse_ephemeris_file(filename):
                     ephemeris_row = [float(num) for num in line.split()]
 
                     # convert timestamps to UNIX timestamp with start_time offset
-                    jdate_timestamp = Time(ephemeris_row[0], format='jd')
-                    ephemeris_row[0] = UTC_to_Linux(jdate_timestamp.isot)
-                    ephemeris_row[0] += start_time
+                    ephemeris_row[0] = convert_jdate_to_unix(ephemeris_row[0], start_time=start_time)
 
                     orbit_tuple = OrbitPoint(ephemeris_row[0], ephemeris_row[1:4],
                                              ephemeris_row[4:7])
