@@ -1,13 +1,39 @@
 """Implementation of Viewing cone algorithm"""
 from math import asin, atan, sqrt, sin, cos, pi
-
-from ai.cs import cart2sp
+import numpy as np
 from numpy import cross
 from numpy.linalg import norm
 
 from kaos.algorithm import (SECONDS_PER_DAY, ANG_VEL_EARTH, THETA_NAUGHT, TimeInterval,
                             ViewConeError)
 
+
+def cart2sp(x, y, z):
+    """Converts data from cartesian coordinates into spherical.
+
+    Args:
+        x (scalar or array_like): X-component of data.
+        y (scalar or array_like): Y-component of data.
+        z (scalar or array_like): Z-component of data.
+
+    Returns:
+        Tuple (r, theta, phi) of data in spherical coordinates.
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    z = np.asarray(z)
+    scalar_input = False
+    if x.ndim == 0 and y.ndim == 0 and z.ndim == 0:
+        x = x[None]
+        y = y[None]
+        z = z[None]
+        scalar_input = True
+    r = np.sqrt(x**2+y**2+z**2)
+    theta = np.arcsin(z/r)
+    phi = np.arctan2(y, x)
+    if scalar_input:
+        return (r.squeeze(), theta.squeeze(), phi.squeeze())
+    return (r, theta, phi)
 
 def reduce_poi(site_eci, sat_pos, sat_vel, q_magnitude, poi):
     """Performs a series of viewing cone calculations and shrinks the input POI
