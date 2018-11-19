@@ -1,6 +1,7 @@
 """"Handles the reading and parsing of ephemeris files.  Parsed files are stored in the DB.  """
 import os
 from collections import namedtuple
+from kaos.utils.time_conversion import jdate_to_unix
 from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
 from sqlalchemy import or_, and_
 import numpy as np
@@ -19,7 +20,8 @@ def add_segment_to_db(orbit_data, satellite_id):
     using points in different segments.
     """
 
-    # TODO Validate satellite_id
+    if satellite_id < 0:
+        return
 
     segment_start = orbit_data[0].time
     segment_end = orbit_data[-1].time
@@ -27,12 +29,12 @@ def add_segment_to_db(orbit_data, satellite_id):
     """Abort if this segment overlaps with anything currently in the DB, because we cannot
     interpolate across segments."""
     if OrbitSegments.query.filter(OrbitSegments.platform_id == satellite_id) \
-                          .filter(or_(((segment_start < OrbitSegments.start_time) \
-                                        & (segment_end > OrbitSegments.start_time)), \
-                                     ((segment_start < OrbitSegments.end_time) \
-                                        & (segment_end > OrbitSegments.end_time)), \
-                                      ((segment_start == OrbitSegments.start_time)  \
-                                        & (segment_end == OrbitSegments.end_time)))) \
+                          .filter(or_(and_((segment_start < OrbitSegments.start_time), \
+                                           (segment_end > OrbitSegments.start_time)), \
+                                      and_((segment_start < OrbitSegments.end_time), \
+                                           (segment_end > OrbitSegments.end_time)), \
+                                      and_((segment_start == OrbitSegments.start_time),  \
+                                           (segment_end == OrbitSegments.end_time)))) \
                           .all():
         return
 
@@ -43,7 +45,6 @@ def add_segment_to_db(orbit_data, satellite_id):
     DB.session.commit()
 
     for orbit_point in orbit_data:
-        # TODO Validate uniqueness for this platform
         orbit_record = OrbitRecords(platform_id=satellite_id, segment_id=segment.segment_id,
                                     time=orbit_point.time, position=orbit_point.pos,
                                     velocity=orbit_point.vel)
@@ -61,8 +62,6 @@ def parse_ephemeris_file(filename):
       in SatelliteInfo
       """
 
-    #TODO: pre-process the file. Verify file formatting is as we expect
-
     sat = SatelliteInfo(platform_name=os.path.splitext(filename)[0])
     sat.save()
     DB.session.commit()
@@ -72,6 +71,7 @@ def parse_ephemeris_file(filename):
     with open(filename, "rU") as f:
         segment_boundaries = []
         segment_tuples = []
+        start_time = float(0)
 
         read_segment_boundaries = False
         read_orbital_data = False
@@ -85,6 +85,8 @@ def parse_ephemeris_file(filename):
             line = line.rstrip('\n')
             if "Epoch in JDate format:" in line:
                 start_time = float(line.split(':')[1])
+                start_time = jdate_to_unix(start_time)
+                last_seen_segment_boundary = start_time
 
             if "CoordinateSystem" in line:
                 coord_system = str(line.split()[1])
@@ -95,7 +97,7 @@ def parse_ephemeris_file(filename):
             if (read_segment_boundaries):
                 line = line.strip()
                 if line:
-                    segment_boundaries.append(float(line))
+                    segment_boundaries.append(start_time + float(line))
 
             if "BEGIN SegmentBoundaryTimes" in line:
                 read_segment_boundaries = True
@@ -108,7 +110,7 @@ def parse_ephemeris_file(filename):
                 line = line.strip()
                 if line:
                     ephemeris_row = [float(num) for num in line.split()]
-                    orbit_tuple = OrbitPoint(ephemeris_row[0], ephemeris_row[1:4],
+                    orbit_tuple = OrbitPoint(start_time + ephemeris_row[0], ephemeris_row[1:4],
                                              ephemeris_row[4:7])
                     segment_tuples.append(orbit_tuple)
 
