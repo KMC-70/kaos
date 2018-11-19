@@ -5,12 +5,12 @@ import calendar
 from astropy.time import Time
 
 def utc_to_unix(time_string):
-    """Takes a string input of the format 'YYYYMMDDTHH:MM:SS.MS' and converts it to a UNIX
-    time stamp.
+    """Takes a string input of the format 'YYYYMMDDTHH:MM:SS.MS'  (where T is the letter 'T')
+    and converts it to a UNIX time stamp.
 
     Args:
         time_string (str): String representation of UTC time in the stated format. Must be
-                           greater 19700101.
+                           greater than 19700101.
 
     Returns:
         The UNIX time stamp representation of the input time string.
@@ -33,8 +33,8 @@ def jdate_to_utc(jdate):
         jdate (float): Float representing the number of days since January 1, 4713 BC.
 
     Returns:
-        A string formatted as 'YYYYMMDDTHH:MM:SS.MS' representing the UTC timestamp of
-        the Jdate.
+        A string formatted as 'YYYYMMDDTHH:MM:SS.MS' (where T is the letter 'T') representing
+        the UTC timestamp of the Jdate.
 
     Raises:
         ValueError: If the string is malformed or the date represented by the string is invalid
@@ -47,3 +47,18 @@ def jdate_to_utc(jdate):
     iso_date = ''.join(str(s) for s in jdate_timestamp.iso.split()[0].split('-'))
     iso_date += 'T' + str(jdate_timestamp.iso.split()[1])
     return iso_date
+
+def jdate_to_unix(jdate):
+    """ Takes a date in Julian format and converts it to a UNIX
+    time stamp.
+
+    Raises:
+        ValueError: If the string is malformed or the date represented by the string is invalid
+                    in the JDate format.
+    """
+    utc_date = jdate_to_utc(jdate)
+
+    # remove the millisecond precision
+    return utc_to_unix(utc_date[:-1])
+
+

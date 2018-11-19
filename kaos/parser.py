@@ -1,9 +1,9 @@
 """"Handles the reading and parsing of ephemeris files.  Parsed files are stored in the DB.  """
 import os
 from collections import namedtuple
-from kaos.utils.time_conversion import utc_to_unix, jdate_to_utc
+from kaos.utils.time_conversion import jdate_to_unix
 from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
@@ -28,12 +28,12 @@ def add_segment_to_db(orbit_data, satellite_id):
     """Abort if this segment overlaps with anything currently in the DB, because we cannot
     interpolate across segments."""
     if OrbitSegments.query.filter(OrbitSegments.platform_id == satellite_id) \
-                          .filter(or_(((segment_start < OrbitSegments.start_time) \
-                                        & (segment_end > OrbitSegments.start_time)), \
-                                     ((segment_start < OrbitSegments.end_time) \
-                                        & (segment_end > OrbitSegments.end_time)), \
-                                     ((segment_start == OrbitSegments.start_time)  \
-                                        & (segment_end == OrbitSegments.end_time)))) \
+                          .filter(or_(and_((segment_start < OrbitSegments.start_time), \
+                                           (segment_end > OrbitSegments.start_time)), \
+                                      and_((segment_start < OrbitSegments.end_time), \
+                                           (segment_end > OrbitSegments.end_time)), \
+                                      and_((segment_start == OrbitSegments.start_time),  \
+                                           (segment_end == OrbitSegments.end_time)))) \
                           .all():
         return
 
@@ -50,20 +50,6 @@ def add_segment_to_db(orbit_data, satellite_id):
         orbit_record.save()
 
     DB.session.commit()
-
-def jdate_to_unix(jdate):
-    """ Takes a date in Julian format and converts it to a UNIX
-    time stamp.
-
-    Raises:
-        ValueError: If the string is malformed or the date represented by the string is invalid
-                    in the JDate format.
-    """
-    utc_date = jdate_to_utc(jdate)
-
-    # remove the millisecond precision
-    return utc_to_unix(utc_date[:-1])
-
 
 def parse_ephemeris_file(filename):
     """Parse the given ephemeris file and store the orbital data into the DB. We assume that
