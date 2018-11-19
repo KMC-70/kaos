@@ -3,6 +3,7 @@ import os
 from collections import namedtuple
 from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
 from sqlalchemy import or_, and_
+import numpy as np
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
@@ -51,10 +52,13 @@ def add_segment_to_db(orbit_data, satellite_id):
     DB.session.commit()
 
 def parse_ephemeris_file(filename):
-    """Parse the given ephemeris file and store the orbital data into the DB. We assume that
+    """Parse the given ephemeris file and store the orbital data into OrbitRecords. We assume that
       each row in the ephemeris file is a 7-tuple containing an orbital point, formatted as:
 
       time posx posy posz velx vely velz
+
+      Calculate the maximum distance from earth center to the position if the satellite. Insert it
+      in SatelliteInfo
       """
 
     #TODO: pre-process the file. Verify file formatting is as we expect
@@ -63,6 +67,8 @@ def parse_ephemeris_file(filename):
     sat.save()
     DB.session.commit()
 
+    max_distance = 0
+
     with open(filename, "rU") as f:
         segment_boundaries = []
         segment_tuples = []
@@ -70,9 +76,9 @@ def parse_ephemeris_file(filename):
         read_segment_boundaries = False
         read_orbital_data = False
 
-        """Remembers the last seen segment boundary while reading the ephemeris rows. Needed to
-        differentiate between the beginning of a new segment and the end of en existing segment of
-        data"""
+        #Remembers the last seen segment boundary while reading the ephemeris rows. Needed to
+        #differentiate between the beginning of a new segment and the end of en existing segment of
+        #data
         last_seen_segment_boundary = 0
 
         for line in f:
@@ -106,9 +112,13 @@ def parse_ephemeris_file(filename):
                                              ephemeris_row[4:7])
                     segment_tuples.append(orbit_tuple)
 
-                    """ The line we just read is a segment boundary, So first check that this is the
-                    *end* of a segment, not the beginning of a new one, and then add this segment to
-                    the db."""
+                    #Keep track of the magnitude of the position vector and update with a bigger
+                    #value
+                    max_distance = max(max_distance, np.linalg.norm(ephemeris_row[1:4]))
+
+                    #The line we just read is a segment boundary, So first check that this is the
+                    #*end* of a segment, not the beginning of a new one, and then add this segment
+                    # to the db.
                     if (orbit_tuple.time in segment_boundaries and
                             last_seen_segment_boundary != orbit_tuple.time):
                         last_seen_segment_boundary = orbit_tuple.time
@@ -118,5 +128,8 @@ def parse_ephemeris_file(filename):
             if "EphemerisTimePosVel" in line:
                 read_orbital_data = True
 
+            # After getting the q_max, insert it into SatelliteInfo"""
+            sat.maximum_altitude = max_distance
+            sat.save()
         DB.session.commit()
 

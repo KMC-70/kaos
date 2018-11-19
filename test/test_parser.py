@@ -7,6 +7,7 @@ from kaos.parser import *
 
 from . import KaosTestCaseNonPersistent
 from .context import kaos
+import numpy as np
 
 OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
 
@@ -60,4 +61,18 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
 
         # segments from both files
         self.assertTrue(len(orbit_segment.query.all()) == 28)
+
+    def test_find_maximum_distance(self):
+        largest_q = 0
+        parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
+        with open("ephemeris/Radarsat2_Fixed.e") as file:
+            for num, line in enumerate(file,1):
+                line = line.rstrip('\n')
+                if num > 46 and num < 17366:
+                    position_row = [float(num) for num in line.split()]
+                    largest_q = max(largest_q, np.linalg.norm(position_row[1:4]))
+        temp = SatelliteInfo.query.filter_by(platform_id=1).first().maximum_altitude
+        self.assertAlmostEqual(temp, largest_q)
+
+
 
