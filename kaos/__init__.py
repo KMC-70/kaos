@@ -1,6 +1,7 @@
 """KAOS application initialization code."""
 
 from flask import Flask, jsonify
+
 from kaos.api.errors import APIError
 
 def create_app(config="settings.cfg"):
