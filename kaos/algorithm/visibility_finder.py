@@ -62,7 +62,7 @@ class VisibilityFinder(object):
                  (sat_site_pos * sat_site_vel) * (sat_site_pos * site_normal_pos)))
 
 
-    def visibility_fourth_derivative(self, start_time, end_time):
+    def visibility_fourth_derivative(self, time, sub_interval):
         """Calculate the fourth derivative of the visibility function of the satellite and the site
         at a given time.
 
@@ -76,6 +76,9 @@ class VisibilityFinder(object):
             This function uses the approximation defined in the Rapid Satellite-to-Site Visibility
             paper.
         """
+        #pylint: disable=too-many-locals
+
+        start_time, end_time = sub_interval
         interval_length = end_time - start_time
         mid_time = start_time + (interval_length / 2)
 
@@ -101,15 +104,18 @@ class VisibilityFinder(object):
         # Since a4's computation is complex, it was split into several parts
         a4_first_term = ((4 / interval_length**4) *
                          (visibility_start + (4 * visibility_mid) + visibility_end))
-
         a4_second_term = ((4 / interval_length**4) *
                           ((visibility_d_start * ((2 * start_time) + (3 * end_time))) +
                            ((10 * visibility_d_mid) * (start_time + end_time)) +
                            (visibility_d_end * ((3 * start_time) + (2 * end_time)))))
-
         a4_third_term = ((24 / interval_length**5) *
                          ((visibility_start * ((2 * start_time) + (3 * end_time))) -
                           (visibility_end * ((3 * start_time) + (2 * end_time)))))
+        a4 = a4_first_term - a4_second_term - a4_third_term
+
+        # Using the above co-efficients we can determine the approximation as per Eq 5 of the cited
+        # paper
+        return (120 * a5 * time) + (24 * a4)
 
     def determine_visibility(self):
         """TODO: Docstring for determine_visibility.
