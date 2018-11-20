@@ -3,6 +3,7 @@
 Author: Team KMC-70
 """
 
+
 class ViewConeError(Exception):
     """Raised when the viewing cone algorithm cannot shrink the input interval."""
     pass

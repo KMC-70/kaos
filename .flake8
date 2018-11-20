@@ -1,0 +1,13 @@
+[flake8]
+ignore = F401,
+    E128,  # 
+    W503,  # linebreak before binary operator
+    W504  # linebreak after binary operator
+max-line-length = 100
+exclude =
+    .git,
+    __pycache__,
+    docs,
+    ephemeris,
+    kenv,
+    scripts

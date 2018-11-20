@@ -13,4 +13,3 @@ TimeInterval = namedtuple("TimeInterval", "start, end")
 
 """Orbit information for a given point in time"""
 OrbitPoint = namedtuple("OrbitPoint", "time, pos, vel")
-

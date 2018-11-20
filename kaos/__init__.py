@@ -4,6 +4,7 @@ from flask import Flask, jsonify
 
 from kaos.api.errors import APIError
 
+
 def create_app(config="settings.cfg"):
     """Create and setup the KAOS app."""
 
@@ -40,4 +41,3 @@ def create_app(config="settings.cfg"):
     # pylint: enable=unused-variable,missing-docstring
 
     return app
-
