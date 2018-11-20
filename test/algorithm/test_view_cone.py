@@ -1,15 +1,13 @@
-""" test_view_cone.py """
-import unittest
+import pytest, unittest
+
 from random import randint
 
 from ddt import ddt, data
 
-from kaos.algorithm import view_cone, TimeInterval, Vector3D, ViewConeError
-
-# TODO: move test constants to a unified location
-# Time constants for test environment:
-ONE_DAY = 86164 #23:56:04 in seconds
-J2000 = 946684800 # Jan 1st 1970 in POSIX
+from kaos.algorithm import view_cone
+from kaos.errors import ViewConeError
+from kaos.constants import SECONDS_PER_DAY, J2000
+from kaos.tuples import Vector3D, TimeInterval
 
 @ddt
 class TestViewCone(unittest.TestCase):
@@ -48,17 +46,17 @@ class TestViewCone(unittest.TestCase):
         (Vector3D(x=-1104185.9192367536, y=6281831.34325032, z=147.06403560447933),
          (7.3779408317663437e+06, 4.9343382472754805e+04, 2.1445380156320367e+04),
          (-2.1365998990816905e+01, 2.2749470591161244e-01, 7.3501075690228217e+03),
-         7378140*(1+1.8e-19), TimeInterval(J2000, J2000+ONE_DAY),
+         7378140*(1+1.8e-19), TimeInterval(J2000, J2000+SECONDS_PER_DAY),
          [(J2000+1.202394298942655e+04, J2000+2.647003898543385e+04),
           (J2000+5.510598795010193e+04, J2000+6.955208395443503e+04)]),
 
         (Vector3D(x=6280644.383697788, y=-1110917.500932147, z=149.53109223909593),
          (3.8947064924267233e+03, -3.1853237741789821e+03, -5.4020492601011592e+03),
          (-5.6110588908929424e+06, -4.4103685540919630e+06, -1.9375720842113465e+06),
-         7478140*(1+0.05), TimeInterval(J2000, J2000+ONE_DAY),
+         7478140*(1+0.05), TimeInterval(J2000, J2000+SECONDS_PER_DAY),
          [(J2000, J2000+2.027181145241799e+04),
           (J2000+3.957976730797361e+04, J2000+6.335463139827675e+04),
-          (J2000+8.266103734950394e+04, J2000+ONE_DAY)])
+          (J2000+8.266103734950394e+04, J2000+SECONDS_PER_DAY)])
     )
     def test_reduce_poi(self, test_data):
         """Tests the viewing cone algorithm with non-corner-case data
@@ -80,12 +78,12 @@ class TestViewCone(unittest.TestCase):
         (Vector3D(x=-4892824.52928303, y=2505.6040609508723, z=4077844.5084031746),
          (6.8779541256529745e+06, 4.5999490750985817e+04, 1.9992074250214235e+04),
          (-5.1646755701370530e+01, 5.3829730836383123e+03, 5.3826328640238344e+03),
-         6878140*(1+1.8e-16), TimeInterval(J2000, J2000+ONE_DAY)),
+         6878140*(1+1.8e-16), TimeInterval(J2000, J2000+SECONDS_PER_DAY)),
         # Test case with no roots (always inside the viewing cone)
         (Vector3D(x=-1104185.9192367536, y=6281831.34325032, z=147.06403560447933),
          (7.3779408317663465e+06, 4.9343382472754820e+04, 2.1445380156320374e+04),
          (-5.0830385351827260e+01, 7.3220252051302523e+03, 6.4023511402880990e+02),
-         7378140*(1+1.8e-16), TimeInterval(J2000, J2000+ONE_DAY))
+         7378140*(1+1.8e-16), TimeInterval(J2000, J2000+SECONDS_PER_DAY))
     )
     def test_reduce_poi_unsupported_case(self, test_data):
         """Tests the viewing cone algorithm with unsupported configurations of orbit and location

@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from kaos.models import OrbitRecords, OrbitSegments
+from kaos.models import OrbitSegment, OrbitRecord
 
 class Interpolator:
     """Utility class to interpolate satellite position and velocity at arbitrary times, 
@@ -10,46 +10,6 @@ class Interpolator:
     """
     def __init__(self, platform_id):
         self.platform_id = platform_id
-
-    @staticmethod
-    def get_segment(platform_id, timestamp):
-        """Get the orbit segment for the platform_id and time.
-
-        Args:
-            platform_id: The UID of the satellite.
-            timestamp: The time to search for in Unix epoch seconds.
-
-        Return:
-            The orbit segment for this platform_id that contains the timestamp. If multiple
-            segments include this timestamp, which may occur if timestamp is a segment
-            boundary, then return the segment whose start time is timestamp. If no matching
-            segment exists, return None.
-        """
-        # TODO move this to model
-        # pylint: disable=undefined-variable
-        return (OrbitSegments.query.filter(OrbitSegments.platform_id == platform_id,
-                                           OrbitSegments.start_time <= timestamp,
-                                           OrbitSegments.end_time >= timestamp)
-                                    .order_by(OrbitSegments.start_time.desc())
-                                    .first())
-        # pylint: enable=undefined-variable
-
-    @staticmethod
-    def get_orbit_records_by_segment(segment_id):
-        """Get all the orbit records in a segment.
-
-        Args:
-            segment_id: The segment id.
-
-        Return:
-            All the orbit records, sorted by time.
-        """
-        # TODO move this to model
-        # pylint: disable=undefined-variable
-        return (OrbitRecords.query.filter_by(segment_id=segment_id)
-                                  .order_by(OrbitRecords.time)
-                                  .all())
-        # pylint: enable=undefined-variable
         
     @staticmethod
     def linear_interp(platform_id, timestamp):
@@ -67,13 +27,13 @@ class Interpolator:
             for the given satellite and timestamp.
         """
         # find the correct segment
-        segment = Interpolator.get_segment(platform_id, timestamp)
+        segment = OrbitSegment.get_by_platform_and_time(platform_id, timestamp)
         if not segment:
             raise ValueError("No segment found: {}, {}".format(platform_id, timestamp))
 
-        orbit_records = Interpolator.get_orbit_records_by_segment(segment.segment_id)
+        orbit_records = OrbitRecord.get_by_segment(segment.segment_id)
 
-        # can't do linear interpolation in this case
+        # can't do linear interpolation if we don't have enough records
         if not orbit_records or len(orbit_records) < 2:
             raise ValueError("Not enough records to perform interpolation: {}, {}".format(
                 platform_id, timestamp))
@@ -91,7 +51,6 @@ class Interpolator:
 
         return tuple(tpos), tuple(tvel)
 
-
     def interpolate(self, timestamp):
         """Estimate the position and velocity of the satellite at a given time.
 
@@ -105,4 +64,3 @@ class Interpolator:
             not be done, return None.
         """
         return Interpolator.linear_interp(self.platform_id, timestamp)
-

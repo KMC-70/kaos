@@ -1,7 +1,8 @@
 """KAOS application initialization code."""
 
 from flask import Flask, jsonify
-from api.errors import APIError
+
+from kaos.api.errors import APIError
 
 def create_app(config="settings.cfg"):
     """Create and setup the KAOS app."""
@@ -23,11 +24,9 @@ def create_app(config="settings.cfg"):
     @app.route('/')
     def index():
         return 'Welcome to KAOS!'
-    # pylint: enable=unused-variable,missing-docstring
 
     # Setup default error handlers. 404 and 505 are special case handlers because the framework can
     # throw them automatically.
-    # pylint: disable=unused-variable,missing-docstring
     @app.errorhandler(405)
     @app.errorhandler(404)
     def method_not_allowed(error):
@@ -41,3 +40,4 @@ def create_app(config="settings.cfg"):
     # pylint: enable=unused-variable,missing-docstring
 
     return app
+

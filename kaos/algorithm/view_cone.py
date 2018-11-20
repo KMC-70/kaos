@@ -4,9 +4,9 @@ import numpy as np
 from numpy import cross
 from numpy.linalg import norm
 
-from kaos.algorithm import (SECONDS_PER_DAY, ANG_VEL_EARTH, THETA_NAUGHT, TimeInterval,
-                            ViewConeError)
-
+from ..constants import SECONDS_PER_DAY, ANGULAR_VELOCITY_EARTH, THETA_NAUGHT
+from ..tuples import TimeInterval
+from ..errors import ViewConeError
 
 def cart2sp(x, y, z):
     """Converts data from cartesian coordinates into spherical.
@@ -139,19 +139,19 @@ def _view_cone_calc(site_eci, sat_pos, sat_vel, q_magnitude, m):
     # Formulas from paper:
     # Note: each Txxx represents an intersection between viewing cone and the orbit
     gamma = THETA_NAUGHT + asin((r_site_magnitude * sin((pi/2)+THETA_NAUGHT))/q_magnitude)
-    tin = ((1/ANG_VEL_EARTH) * (asin((cos(gamma)-(p_unit_z*sin(lat_geoc))) /
+    tin = ((1/ANGULAR_VELOCITY_EARTH) * (asin((cos(gamma)-(p_unit_z*sin(lat_geoc))) /
             (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc)))
             - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m))
-    tout = ((1/ANG_VEL_EARTH) * (pi - asin((cos(gamma)-(p_unit_z*sin(lat_geoc)))/
+    tout = ((1/ANGULAR_VELOCITY_EARTH) * (pi - asin((cos(gamma)-(p_unit_z*sin(lat_geoc)))/
             (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc)))
             - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m))
 
     # Second set
     gamma2 = pi - gamma
-    tin_2 = ((1/ANG_VEL_EARTH) * (asin((cos(gamma2)-(p_unit_z*sin(lat_geoc))) /
+    tin_2 = ((1/ANGULAR_VELOCITY_EARTH) * (asin((cos(gamma2)-(p_unit_z*sin(lat_geoc))) /
             (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc)))
             - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m))
-    tout_2 = ((1/ANG_VEL_EARTH) * (pi - asin((cos(gamma2)-(p_unit_z*sin(lat_geoc))) /
+    tout_2 = ((1/ANGULAR_VELOCITY_EARTH) * (pi - asin((cos(gamma2)-(p_unit_z*sin(lat_geoc))) /
             (sqrt((p_unit_x**2)+(p_unit_y**2))*cos(lat_geoc)))
             - lon_geoc - atan(p_unit_x/p_unit_y) + 2*pi*m))
 

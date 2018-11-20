@@ -1,8 +1,12 @@
 """Defines the base classes to be used in testing KAOS."""
 
+import os, sys
 from unittest import TestCase
 
-from .context import kaos
+sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../kaos'))
+
+import kaos
 from kaos import create_app
 from kaos.models import DB
 
@@ -28,6 +32,7 @@ class KaosTestCase(TestCase):
         DB.session.remove()
         DB.drop_all()
 
+
 class KaosTestCaseNonPersistent(KaosTestCase):
     """Test classes subclassing this class will have the DB recreated in between each test."""
     
@@ -38,4 +43,3 @@ class KaosTestCaseNonPersistent(KaosTestCase):
         DB.session.rollback()
         DB.session.commit()
         DB.drop_all()
-

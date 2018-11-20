@@ -1,5 +1,3 @@
-"""Used to define custom model validators."""
-
 import flask_validator
 
 class ValidateString(flask_validator.ValidateString):

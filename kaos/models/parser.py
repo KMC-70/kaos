@@ -1,12 +1,13 @@
-""""Handles the reading and parsing of ephemeris files.  Parsed files are stored in the DB.  """
-import os
-from collections import namedtuple
-from kaos.utils.time_conversion import jdate_to_unix
-from kaos.models import DB, OrbitRecords, SatelliteInfo, OrbitSegments
-from sqlalchemy import or_, and_
-import numpy as np
+""""Handles the reading and parsing of ephemeris files. Parsed files are stored in the DB."""
 
-OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
+import os
+
+import numpy as np
+from sqlalchemy import or_, and_
+
+from kaos.utils.time_conversion import jdate_to_unix
+from kaos.tuples import OrbitPoint
+from kaos.models import DB, Satellite, OrbitSegment, OrbitRecord
 
 def add_segment_to_db(orbit_data, satellite_id):
     """Add the given segment to the database.  We create a new entry in the Segment DB that holds i
@@ -28,41 +29,40 @@ def add_segment_to_db(orbit_data, satellite_id):
 
     """Abort if this segment overlaps with anything currently in the DB, because we cannot
     interpolate across segments."""
-    if OrbitSegments.query.filter(OrbitSegments.platform_id == satellite_id) \
-                          .filter(or_(and_((segment_start < OrbitSegments.start_time), \
-                                           (segment_end > OrbitSegments.start_time)), \
-                                      and_((segment_start < OrbitSegments.end_time), \
-                                           (segment_end > OrbitSegments.end_time)), \
-                                      and_((segment_start == OrbitSegments.start_time),  \
-                                           (segment_end == OrbitSegments.end_time)))) \
-                          .all():
+    if (OrbitSegment.query.filter(OrbitSegment.platform_id == satellite_id)
+                          .filter(or_(and_((segment_start < OrbitSegment.start_time),
+                                           (segment_end > OrbitSegment.start_time)),
+                                      and_((segment_start < OrbitSegment.end_time),
+                                           (segment_end > OrbitSegment.end_time)),
+                                      and_((segment_start == OrbitSegment.start_time),
+                                           (segment_end == OrbitSegment.end_time))))
+                          .all()):
         return
 
     """create segment entry. Retrieve segment ID and insert it along with data into Orbit db"""
-    segment = OrbitSegments(platform_id=satellite_id, start_time=segment_start,
-                            end_time=segment_end)
+    segment = OrbitSegment(platform_id=satellite_id, start_time=segment_start,
+                           end_time=segment_end)
     segment.save()
     DB.session.commit()
 
     for orbit_point in orbit_data:
-        orbit_record = OrbitRecords(platform_id=satellite_id, segment_id=segment.segment_id,
-                                    time=orbit_point.time, position=orbit_point.pos,
-                                    velocity=orbit_point.vel)
+        orbit_record = OrbitRecord(platform_id=satellite_id, segment_id=segment.segment_id,
+                                   time=orbit_point.time, position=orbit_point.pos,
+                                   velocity=orbit_point.vel)
         orbit_record.save()
 
     DB.session.commit()
 
 def parse_ephemeris_file(filename):
-    """Parse the given ephemeris file and store the orbital data into OrbitRecords. We assume that
+    """Parse the given ephemeris file and store the orbital data in OrbitRecords. We assume that
       each row in the ephemeris file is a 7-tuple containing an orbital point, formatted as:
 
       time posx posy posz velx vely velz
 
       Calculate the maximum distance from earth center to the position if the satellite. Insert it
-      in SatelliteInfo
+      in Satellite.
       """
-
-    sat = SatelliteInfo(platform_name=os.path.splitext(filename)[0])
+    sat = Satellite(platform_name=os.path.splitext(filename)[0])
     sat.save()
     DB.session.commit()
 
@@ -130,7 +130,7 @@ def parse_ephemeris_file(filename):
             if "EphemerisTimePosVel" in line:
                 read_orbital_data = True
 
-            # After getting the q_max, insert it into SatelliteInfo"""
+            # After getting the q_max, insert it into Satellite"""
             sat.maximum_altitude = max_distance
             sat.save()
         DB.session.commit()
