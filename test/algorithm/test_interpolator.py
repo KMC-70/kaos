@@ -1,7 +1,7 @@
-import context
-from kaos.models import *
+from kaos.models import DB, Satellite, OrbitSegment, OrbitRecord
 from kaos.algorithm.interpolator import Interpolator
-from test import KaosTestCase
+
+from .. import KaosTestCase
 
 class TestInterpolator(KaosTestCase):
     @classmethod
@@ -10,24 +10,24 @@ class TestInterpolator(KaosTestCase):
 
         # create a fake satellite
         cls.platform_id = 1
-        satellite = SatelliteInfo(platform_id=cls.platform_id, platform_name="testsat")
+        satellite = Satellite(platform_id=cls.platform_id, platform_name="testsat")
         satellite.save()
         DB.session.commit()
 
         # add a segment for this satellite
         cls.segment_start = float(1)
         cls.segment_end = float(3)
-        cls.segment = OrbitSegments(platform_id=cls.platform_id, 
-                                    start_time=cls.segment_start, end_time=cls.segment_end)
+        cls.segment = OrbitSegment(platform_id=cls.platform_id, 
+                                   start_time=cls.segment_start, end_time=cls.segment_end)
         cls.segment.save()
         DB.session.commit()
 
         # create some segment data for the satellite
         for record in range(1, 4):
             t = float(record)
-            orbit_record = OrbitRecords(segment_id=cls.segment.segment_id, 
-                                        platform_id=cls.platform_id,
-                                        time=t, position=(t, t, t), velocity=(t, t, t))
+            orbit_record = OrbitRecord(segment_id=cls.segment.segment_id, 
+                                       platform_id=cls.platform_id,
+                                       time=t, position=(t, t, t), velocity=(t, t, t))
             orbit_record.save()
 
         DB.session.commit()
@@ -59,15 +59,15 @@ class TestInterpolator(KaosTestCase):
     def test_linear_interp__too_few_data_points(self):
         # create a new segment for this satellite
         timestamp = self.segment_end + 1
-        segment = OrbitSegments(platform_id=self.platform_id, start_time=timestamp,
-                                end_time=timestamp)
+        segment = OrbitSegment(platform_id=self.platform_id, start_time=timestamp,
+                               end_time=timestamp)
         segment.save()
         DB.session.commit()
 
         # create a single record for this segment
-        record = OrbitRecords(segment_id=segment.segment_id, platform_id=self.platform_id,
-                              time=timestamp, position=(1.0, 1.0, 1.0),
-                              velocity=(1.0, 1.0, 1.0))
+        record = OrbitRecord(segment_id=segment.segment_id, platform_id=self.platform_id,
+                             time=timestamp, position=(1.0, 1.0, 1.0),
+                             velocity=(1.0, 1.0, 1.0))
         record.save()
         DB.session.commit()
 

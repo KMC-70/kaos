@@ -2,13 +2,11 @@
 
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
-from . import KaosTestCaseNonPersistent
-from .context import kaos
-from kaos.models import *
-from kaos.parser import *
-from collections import namedtuple
+from kaos.tuples import OrbitPoint
+from kaos.models import DB, Satellite, ResponseHistory, OrbitSegment, OrbitRecord
+from kaos.models.parser import *
 
-OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
+from .. import KaosTestCaseNonPersistent
 
 class TestResponseHistory(KaosTestCaseNonPersistent):
     """Ensures that the response history table behaves as expected."""
@@ -88,15 +86,15 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
     def test_single_segment_min_max(self):
         """Test that a single orbital segment has the correct
         start and end time."""
-        sat = SatelliteInfo(platform_name="TEST")
+        sat = Satellite(platform_name="TEST")
         sat.save()
         DB.session.commit()
 
         start = 0.0
         end = 1000.0
 
-        orbit_segment = OrbitSegments(platform_id=sat.platform_id, start_time=start,
-                                        end_time=end)
+        orbit_segment = OrbitSegment(platform_id=sat.platform_id, start_time=start,
+                                     end_time=end)
         orbit_segment.save()
         DB.session.commit()
 
@@ -109,7 +107,7 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
 
     def test_db_add_correct_num_rows(self):
         """Test that the add_segment_to_db adds the correct number of rows to the DB.  """
-        sat = SatelliteInfo(platform_name="TEST")
+        sat = Satellite(platform_name="TEST")
         sat.save()
         DB.session.commit()
 
@@ -120,12 +118,12 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
             orbit_data.append(orbit_tuple)
 
         add_segment_to_db(orbit_data, sat.platform_id)
-        self.assertTrue(len(OrbitRecords.query.all()) == 20)
+        self.assertTrue(len(OrbitRecord.query.all()) == 20)
 
     def test_db_add_correct_orbit_data(self):
         """Test that the add_segment_to_db adds the correct row data to the DB. Validates time,
         position, and velocity for each DB row added."""
-        sat = SatelliteInfo(platform_name="TEST")
+        sat = Satellite(platform_name="TEST")
         sat.save()
         DB.session.commit()
 
@@ -137,7 +135,7 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
 
         add_segment_to_db(orbit_data, sat.platform_id)
 
-        orbit_db = OrbitRecords()
+        orbit_db = OrbitRecord()
         self.assertTrue(len(orbit_db.query.all()) == 20)
 
         orbits = orbit_db.query.all()
@@ -151,7 +149,7 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
         call to add_segment_to_db should create only one segment at a time.  """
 
         # create and add first segment to DB
-        sat = SatelliteInfo(platform_name="TEST1")
+        sat = Satellite(platform_name="TEST1")
         sat.save()
         DB.session.commit()
 
@@ -163,10 +161,10 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
 
         add_segment_to_db(orbit_data, sat.platform_id)
 
-        self.assertTrue(len(OrbitSegments.query.all()) == 1)
+        self.assertTrue(len(OrbitSegment.query.all()) == 1)
 
         # create and add second segment
-        sat2 = SatelliteInfo(platform_name="TEST2")
+        sat2 = Satellite(platform_name="TEST2")
         sat2.save()
         DB.session.commit()
 
@@ -179,12 +177,12 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
         add_segment_to_db(orbit_data, sat2.platform_id)
 
         # make sure we have two distincts segments in the DB
-        self.assertTrue(len(OrbitSegments.query.all()) == 2)
+        self.assertTrue(len(OrbitSegment.query.all()) == 2)
 
     def test_duplicate_segments(self):
         """ Test that a duplicated segment for a satellite does not get added to the DB
         """
-        sat = SatelliteInfo(platform_name="TEST")
+        sat = Satellite(platform_name="TEST")
         sat.save()
         DB.session.commit()
 
@@ -204,14 +202,14 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
             orbit_data.append(orbit_tuple)
 
         add_segment_to_db(orbit_data, sat.platform_id)
-        self.assertTrue(len(OrbitSegments.query.all()) == 1)
+        self.assertTrue(len(OrbitSegment.query.all()) == 1)
 
 
     def test_segment_overlapping_start_time(self):
         """ Test that a segment overlapping the start time of another segment does not
         get added to the DB.
         """
-        sat = SatelliteInfo(platform_name="TEST")
+        sat = Satellite(platform_name="TEST")
         sat.save()
         DB.session.commit()
 
@@ -237,13 +235,13 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
         orbit_data.append(orbit_tuple)
 
         add_segment_to_db(orbit_data, sat.platform_id)
-        self.assertTrue(len(OrbitSegments.query.all()) == 1)
+        self.assertTrue(len(OrbitSegment.query.all()) == 1)
 
     def test_segment_overlapping_end_time(self):
         """ Test that a segment overlapping the end time of another segment does not
         get added to the DB.
         """
-        sat = SatelliteInfo(platform_name="TEST")
+        sat = Satellite(platform_name="TEST")
         sat.save()
         DB.session.commit()
 
@@ -269,13 +267,13 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
         orbit_data.append(orbit_tuple)
 
         add_segment_to_db(orbit_data, sat.platform_id)
-        self.assertTrue(len(OrbitSegments.query.all()) == 1)
+        self.assertTrue(len(OrbitSegment.query.all()) == 1)
 
     def test_overlapping_entire_segment(self):
         """ Test that a segment overlapping the entire time period of the segment does not
         get added to the DB.
         """
-        sat = SatelliteInfo(platform_name="TEST")
+        sat = Satellite(platform_name="TEST")
         sat.save()
         DB.session.commit()
 
@@ -301,4 +299,4 @@ class TestResponseHistory(KaosTestCaseNonPersistent):
         orbit_data.append(orbit_tuple)
 
         add_segment_to_db(orbit_data, sat.platform_id)
-        self.assertTrue(len(OrbitSegments.query.all()) == 1)
+        self.assertTrue(len(OrbitSegment.query.all()) == 1)

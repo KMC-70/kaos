@@ -4,7 +4,8 @@ from numpy import rad2deg,deg2rad
 from astropy import coordinates
 from astropy.time import Time
 
-from kaos.algorithm import Vector3D,ELLIPSOID_A,ELLIPSOID_E
+from ..constants import ELLIPSOID_A, ELLIPSOID_E
+from ..tuples import Vector3D
 
 def lla_to_ecef(lat_deg, lon_deg, alt=0):
     """converts latitude, longitude, and altitude to earth-centered, earth-fixed (ECEF) Cartesian.

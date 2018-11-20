@@ -1,15 +1,11 @@
 """Testing the database in a general sense and the parser specifically."""
 
-from collections import namedtuple
-
-from kaos.models import *
-from kaos.parser import *
-
-from . import KaosTestCaseNonPersistent
-from .context import kaos
 import numpy as np
 
-OrbitPoint = namedtuple('OrbitPoint', 'time, pos, vel')
+from kaos.models import DB, Satellite, ResponseHistory, OrbitSegment, OrbitRecord
+from kaos.models.parser import *
+
+from .. import KaosTestCaseNonPersistent
 
 class TestEphemerisParser(KaosTestCaseNonPersistent):
     """Ensures that the ephemeris parser behaves as expected."""
@@ -19,9 +15,9 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
         parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
 
         # test that the correct number of entries was created
-        self.assertTrue(len(OrbitRecords.query.all()) == 17307) #taken from ephem file
+        self.assertTrue(len(OrbitRecord.query.all()) == 17307) #taken from ephem file
 
-        self.assertTrue(len(OrbitSegments.query.all()) == 14) # taken from ephem file
+        self.assertTrue(len(OrbitSegment.query.all()) == 14) # taken from ephem file
 
         # epoch start in JDate format
         jdate_start = jdate_to_unix(2458119.50000000000000)
@@ -37,7 +33,7 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
 
         seg_times = [jdate_start + float(seg) for seg in segment_boundaries]
 
-        query = OrbitSegments.query.all()
+        query = OrbitSegment.query.all()
 
         for segment, seg_start in zip(query, seg_times[:-1]):
             self.assertAlmostEqual(segment.start_time, seg_start, places=4)
@@ -47,17 +43,17 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
 
     def test_ephemeris_parser_multiple_file(self):
         parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
-        orbit = OrbitRecords()
+        orbit = OrbitRecord()
 
         # test that the correct number of entries was created
         self.assertTrue(len(orbit.query.all()) == 17307) #taken from ephem file
 
-        orbit_segment = OrbitSegments()
+        orbit_segment = OrbitSegment()
 
         self.assertTrue(len(orbit_segment.query.all()) == 14) # taken from ephem file
 
         parse_ephemeris_file("ephemeris/Radarsat2_J2000.e")
-        orbit = OrbitRecords()
+        orbit = OrbitRecord()
 
         # test that both files are included properly
         self.assertTrue(len(orbit.query.all()) == 34614)
@@ -74,7 +70,7 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
                 if num > 46 and num < 17366:
                     position_row = [float(num) for num in line.split()]
                     largest_q = max(largest_q, np.linalg.norm(position_row[1:4]))
-        temp = SatelliteInfo.query.filter_by(platform_id=1).first().maximum_altitude
+        temp = Satellite.query.filter_by(platform_id=1).first().maximum_altitude
         self.assertAlmostEqual(temp, largest_q)
 
 
