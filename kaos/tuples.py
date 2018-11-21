@@ -5,6 +5,7 @@ Author: Team KMC-70
 
 from collections import namedtuple
 
+# pylint: disable=pointless-string-statement
 """Representation a 3D cartesian vector"""
 Vector3D = namedtuple("Vector3D", "x, y, z")
 
@@ -13,3 +14,4 @@ TimeInterval = namedtuple("TimeInterval", "start, end")
 
 """Orbit information for a given point in time"""
 OrbitPoint = namedtuple("OrbitPoint", "time, pos, vel")
+# pylint: enable=pointless-string-statement

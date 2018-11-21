@@ -1,6 +1,7 @@
 # Project KAOS (Kerbodyne Analytical Orbit System)
 
 [![Build Status](https://travis-ci.org/KMC-70/kaos.svg?branch=master)](https://travis-ci.org/KMC-70/kaos)
+[![codecov](https://codecov.io/gh/KMC-70/kaos/branch/master/graph/badge.svg)](https://codecov.io/gh/KMC-70/kaos)
 
 KAOS is a scalable satellite mission planning suite for Earth observation satellites.
 
@@ -26,10 +27,11 @@ source kenv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Run tests
+### Run tests and pep8
 
 ```
 pytest test -s
+flake8 kaos
 ```
 
 ### Run the server
@@ -42,7 +44,9 @@ flask run
 
 We (mostly) use the [Google Python style guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md). The tl;dr of style rules:
 
+* PEP8 compliant
 * 100 chars per line max
+* prefer `string.format` over C printf formatting
 * snake case variable names
 * readable docstring format:
 
@@ -60,8 +64,6 @@ def get_the_answer(x, y, *args):
     """
     # do stuff
 ```
-
-* prefer `string.format` over C printf formatting
 
 # About the Project
 

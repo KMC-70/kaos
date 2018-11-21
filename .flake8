@@ -1,6 +1,7 @@
 [flake8]
-ignore = F401,
-    E128,  # 
+ignore = F401,  # unused import
+    E126,  # over-indented continuation line
+    E128,  # under-indented continuation line
     W503,  # linebreak before binary operator
     W504  # linebreak after binary operator
 max-line-length = 100
@@ -10,4 +11,5 @@ exclude =
     docs,
     ephemeris,
     kenv,
-    scripts
+    scripts,
+    test

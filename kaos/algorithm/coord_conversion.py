@@ -1,3 +1,5 @@
+"""This file contains functions to convert between LLA, ECI, ECEF coordinate systems."""
+
 from math import sqrt, sin, cos, atan, tan
 
 from numpy import rad2deg, deg2rad
@@ -33,7 +35,7 @@ def lla_to_ecef(lat_deg, lon_deg, alt=0):
             Last updated June, 2004
             NIMA TR8350.2
     """
-
+    # pylint: disable=invalid-name
     # decimal degrees to radians
     lat_rad = deg2rad(lat_deg)
     lon_rad = deg2rad(lon_deg)

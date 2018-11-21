@@ -97,7 +97,7 @@ def parse_ephemeris_file(filename):
             if "END SegmentBoundaryTimes" in line:
                 read_segment_boundaries = False
 
-            if (read_segment_boundaries):
+            if read_segment_boundaries:
                 line = line.strip()
                 if line:
                     segment_boundaries.append(start_time + float(line))

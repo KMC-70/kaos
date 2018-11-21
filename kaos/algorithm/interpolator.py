@@ -39,6 +39,7 @@ class Interpolator:
             raise ValueError("Not enough records to perform interpolation: {}, {}".format(
                 platform_id, timestamp))
 
+        # pylint: disable=invalid-name
         xp = np.array([rec.time for rec in orbit_records])
         pos = np.array([np.array(rec.position) for rec in orbit_records])
         vel = np.array([np.array(rec.velocity) for rec in orbit_records])

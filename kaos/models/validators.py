@@ -1,3 +1,5 @@
+"""Validators for DB models."""
+
 import flask_validator
 
 
