@@ -67,6 +67,16 @@ class VisibilityFinder(object):
         return  first_term - second_term
 
 
+    def bound_time_step_error(self, interval, error):
+        # First we compute the maximum of the fourth derivative as per Eq 8 in the referenced
+        # paper
+        visibility_4_prime_max = self.visibility_fourth_derivative(interval[1], interval)
+
+        # Then we use the error and Eq 9 to calculate the new time_step.
+        return pow((16 * error) / (visibility_4_prime_max / 24), 0.25)
+
+
+
     def visibility_fourth_derivative(self, time, sub_interval):
         """Calculate the fourth derivative of the visibility function of the satellite and the site
         at a given time.
@@ -121,25 +131,67 @@ class VisibilityFinder(object):
         # paper
         return (120 * a5 * time) + (24 * a4)
 
-    def determine_visibility(self, error=1):
-        """TODO: Docstring for determine_visibility.
-        Returns: TODO
+    def determine_visibility(self, error=0.01, tolerance_ratio=0.1, max_iter=1000):
+        """Using the self adapting interpolation algorithm described in the cited paper, this
+        function returns the subintervals for which the satellites have visibility.
 
+        The accuracy of this function is tuned by changing:
+            * error
+            * tolerance_ratio
+            * max_iter
+
+        The error in each interpolation sub period is defined by an approximate error tolerance.
+        This error tolerance is approximate since the algorithm will deem the accuracy sufficient
+        when for a give interpolation sub period either:
+            * The max number of iterations is exceeded
+            * The tolerance ratio is exceeded
+
+        Args:
+            error (float, optional): Tolerance value of approximated error. Defaults to 0.01
+            tolerance_ratio (float, optional): The tolerance ratio of the interval time step.
+                                               Defaults to 0.1
+            max_iter (int, optional): The maximum number of iterations per sub interval. Defaults to
+                                      1000
+
+        Returns:
+            The subintervals over which the site is visible.
+
+        Note:
+            This function assumes a viewing angle of 180 degrees
         """
+        start_time, end_time = self.interval
 
+        # Initialize the algorithm variables
+        subinterval_start = start_time
+        # The subinterval_end is set to start the initial loop iteration
+        subinterval_end = start_time
+        # Defines the length of the initial subinterval (h)
+        prev_time_step = 100
 
-        # Setup initial values
-        # interp_Step = i
-        # time_step = h
-        # iter_num = k
+        while subinterval_end < end_time:
+            new_time_step_1 = prev_time_step
+            # Hack loop since python does not support do-while
+            iter_num = 0
+            while True:
+                subinterval_end = subinterval_start + new_time_step_1
+                new_time_step_2 = self.bound_time_step_error((subinterval_start, subinterval_end),
+                                                             error)
+                if (abs(new_time_step_2 - new_time_step_1) / new_time_step_1) <= tolerance_ratio:
+                    break
 
-        interp_step = 0
-        time_step = 100
+                if (iter_num >= max_iter) and (new_time_step_1 <= new_time_step_2):
+                    break
 
-        while True:
-            iter_number = 1
+                new_time_step_1 = new_time_step_2
+                iter_num += 1
 
-            
-        start_time = self.interval[0]
+            # At this stage for the current interpolation stage the time step is sufficiently small
+            # to keep the error low
+            new_time_step = new_time_step_1
+            subinterval_end = subinterval_start + new_time_step
+            # TODO Resolve roots
 
+            # Set the start time and time step for the next interval
+            subinterval_start = subinterval_end
+            prev_time_step = new_time_step
 
