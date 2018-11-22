@@ -4,7 +4,8 @@ from numpy import rad2deg,deg2rad
 from astropy import coordinates
 from astropy.time import Time
 
-from kaos.algorithm import Vector3D,ELLIPSOID_A,ELLIPSOID_E
+from ..constants import ELLIPSOID_A, ELLIPSOID_E
+from ..tuples import Vector3D
 
 def lla_to_ecef(lat_deg, lon_deg, alt=0):
     """converts latitude, longitude, and altitude to earth-centered, earth-fixed (ECEF) Cartesian.
@@ -80,9 +81,9 @@ def lla_to_eci(lat, lon, alt, time_posix):
           y = GCRS Y-coordinate (m)
           z = GCRS Z-coordinate (m)
         Velocity Vector
-          x = GCRS X-velocity (m)
-          y = GCRS Y-velocity (m)
-          z = GCRS Z-velocity (m)
+          x = GCRS X-velocity (m/s)
+          y = GCRS Y-velocity (m/s)
+          z = GCRS Z-velocity (m/s)
 
     Important Note: Unlike the rest of the software that uses J2000 FK5, the ECI frame used here is
     GCRS; This can potentially introduce around 200m error for locations on surface of Earth.
