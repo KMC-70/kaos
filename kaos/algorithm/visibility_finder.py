@@ -21,11 +21,11 @@ class VisibilityFinder(object):
 
         self.sat_irp = Interpolator(satellite_id)
 
-    def satellite_visibility(self, posix_time):
+    def visibility(self, posix_time):
         """Calculate the visibility function of the satellite and the site at a given time.
 
         Args:
-            posix_time (float): The time to evaluate the visbility function at
+            posix_time (float): The time to evaluate the visibility function at
 
         Returns:
             The value of the visibility function evaluated at the provided time.
@@ -37,18 +37,18 @@ class VisibilityFinder(object):
 
         return (sat_site * site_normal_pos) / np.linalg.norm(sat_site)
 
-    def satallite_visibility_derivative(self, posix_time):
-        """Calculate the dirivative of the visibility function of the satellite and the site at a
+    def visibility_first_derivative(self, time):
+        """Calculate the derivative of the visibility function of the satellite and the site at a
         given time.
 
         Args:
-            posix_time (float): The time to evaluate the dirivative visbility function at.
+            time (float): The UNIX time to evaluate the derivative visibility function at.
 
         Returns:
             The value of the visibility function evaluated at the provided time.
         """
-        sat_pos_vel = self.sat_irp.interpolate(posix_time)
-        site_pos_vel = lla_to_eci(self.site[0], self.site[1], 0, posix_time)
+        sat_pos_vel = self.sat_irp.interpolate(time)
+        site_pos_vel = lla_to_eci(self.site[0], self.site[1], 0, time)
 
         sat_site_pos = np.subtract(sat_pos_vel[0], site_pos_vel[0])
         sat_site_vel = np.subtract(sat_pos_vel[1], site_pos_vel[1])
@@ -61,3 +61,65 @@ class VisibilityFinder(object):
                 ((1/np.linalg.norm(sat_site_pos)**3) *
                  (sat_site_pos * sat_site_vel) * (sat_site_pos * site_normal_pos)))
 
+
+    def visibility_fourth_derivative(self, time, sub_interval):
+        """Calculate the fourth derivative of the visibility function of the satellite and the site
+        at a given time.
+
+        Args:
+            time_interval (
+
+        Returns:
+            The value of the visibility function evaluated at the provided time.
+
+        Note:
+            This function uses the approximation defined in the Rapid Satellite-to-Site Visibility
+            paper.
+        """
+        #pylint: disable=too-many-locals
+
+        start_time, end_time = sub_interval
+        interval_length = end_time - start_time
+        mid_time = start_time + (interval_length / 2)
+
+        # In order to approximate the fourth order derivative, we need to evaluate both the
+        # visibility function and its first derivative at 3 points:
+        #   1- The interval start
+        #   2- The interval midpoint
+        #   3- The interval end
+        visibility_start = self.visibility(start_time)
+        visibility_mid = self.visibility(mid_time)
+        visibility_end = self.visibility(end_time)
+
+        visibility_d_start = self.visibility_first_derivative(start_time)
+        visibility_d_mid = self.visibility_first_derivative(mid_time)
+        visibility_d_end = self.visibility_first_derivative(end_time)
+
+
+        # Calculating the a5 and a4 constants used in the approximation
+        a5 = (((24 / interval_length**5) * (visibility_start - visibility_end)) +
+              ((4 / interval_length**4) *
+               (visibility_d_start + (4 * visibility_d_mid) + visibility_d_end)))
+
+        # Since a4's computation is complex, it was split into several parts
+        a4_first_term = ((4 / interval_length**4) *
+                         (visibility_start + (4 * visibility_mid) + visibility_end))
+        a4_second_term = ((4 / interval_length**4) *
+                          ((visibility_d_start * ((2 * start_time) + (3 * end_time))) +
+                           ((10 * visibility_d_mid) * (start_time + end_time)) +
+                           (visibility_d_end * ((3 * start_time) + (2 * end_time)))))
+        a4_third_term = ((24 / interval_length**5) *
+                         ((visibility_start * ((2 * start_time) + (3 * end_time))) -
+                          (visibility_end * ((3 * start_time) + (2 * end_time)))))
+        a4 = a4_first_term - a4_second_term - a4_third_term
+
+        # Using the above co-efficients we can determine the approximation as per Eq 5 of the cited
+        # paper
+        return (120 * a5 * time) + (24 * a4)
+
+    def determine_visibility(self):
+        """TODO: Docstring for determine_visibility.
+        Returns: TODO
+
+        """
+        pass
