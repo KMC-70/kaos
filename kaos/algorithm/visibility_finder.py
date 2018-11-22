@@ -53,13 +53,18 @@ class VisibilityFinder(object):
         sat_site_pos = np.subtract(sat_pos_vel[0], site_pos_vel[0])
         sat_site_vel = np.subtract(sat_pos_vel[1], site_pos_vel[1])
 
-        site_normal_pos = site_pos_vel[0]/np.linalg.norm(site_pos_vel[0])
-        site_normal_vel = site_pos_vel[1]/np.linalg.norm(site_pos_vel[1])
+        site_normal_pos = site_pos_vel[0] / np.linalg.norm(site_pos_vel[0])
+        site_normal_vel = site_pos_vel[1] / np.linalg.norm(site_pos_vel[1])
 
-        return (((1/np.linalg.norm(sat_site_pos)) *
-                 np.dot(sat_site_vel * site_normal_pos) + np.dot(site_normal_pos * site_normal_vel)) -
-                ((1/np.linalg.norm(sat_site_pos)**3) *
-                 np.dot(sat_site_pos * sat_site_vel) * np.dot(sat_site_pos * site_normal_pos)))
+        first_term = ((1 / np.linalg.norm(sat_site_pos)) *
+                      (np.dot(sat_site_vel * site_normal_pos) +
+                       np.dot(site_normal_pos * site_normal_vel)))
+
+        second_term = ((1/np.linalg.norm(sat_site_pos) ** 3) *
+                       np.dot(sat_site_pos * sat_site_vel) *
+                       np.dot(sat_site_pos * site_normal_pos))
+
+        return  first_term - second_term
 
 
     def visibility_fourth_derivative(self, time, sub_interval):
@@ -95,20 +100,19 @@ class VisibilityFinder(object):
         visibility_d_mid = self.visibility_first_derivative(mid_time)
         visibility_d_end = self.visibility_first_derivative(end_time)
 
-
         # Calculating the a5 and a4 constants used in the approximation
-        a5 = (((24 / interval_length**5) * (visibility_start - visibility_end)) +
+        a5 = (((24 / interval_length ** 5) * (visibility_start - visibility_end)) +
               ((4 / interval_length**4) *
                (visibility_d_start + (4 * visibility_d_mid) + visibility_d_end)))
 
         # Since a4's computation is complex, it was split into several parts
-        a4_first_term = ((4 / interval_length**4) *
+        a4_first_term = ((4 / interval_length ** 4) *
                          (visibility_start + (4 * visibility_mid) + visibility_end))
-        a4_second_term = ((4 / interval_length**4) *
+        a4_second_term = ((4 / interval_length ** 4) *
                           ((visibility_d_start * ((2 * start_time) + (3 * end_time))) +
                            ((10 * visibility_d_mid) * (start_time + end_time)) +
                            (visibility_d_end * ((3 * start_time) + (2 * end_time)))))
-        a4_third_term = ((24 / interval_length**5) *
+        a4_third_term = ((24 / interval_length ** 5) *
                          ((visibility_start * ((2 * start_time) + (3 * end_time))) -
                           (visibility_end * ((3 * start_time) + (2 * end_time)))))
         a4 = a4_first_term - a4_second_term - a4_third_term
@@ -117,9 +121,25 @@ class VisibilityFinder(object):
         # paper
         return (120 * a5 * time) + (24 * a4)
 
-    def determine_visibility(self):
+    def determine_visibility(self, error=1):
         """TODO: Docstring for determine_visibility.
         Returns: TODO
 
         """
-        pass
+
+
+        # Setup initial values
+        # interp_Step = i
+        # time_step = h
+        # iter_num = k
+
+        interp_step = 0
+        time_step = 100
+
+        while True:
+            iter_number = 1
+
+            
+        start_time = self.interval[0]
+
+
