@@ -2,6 +2,7 @@
 
 from flask import jsonify
 
+
 class APIError(Exception):
     """Base class for all API related errors which are designed to trigger responses to the users.
 
@@ -38,6 +39,7 @@ class APIError(Exception):
         response.status_code = self.status_code
         return response
 
+
 class NotFoundError(APIError):
     """Error to be raised when an entry/id is not found.
 
@@ -56,4 +58,3 @@ class NotFoundError(APIError):
         """
         reason = {field_name: 'Entry with value: {} not found'.format(value)}
         APIError.__init__(self, reason, status_code=404)
-

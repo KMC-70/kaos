@@ -1,4 +1,7 @@
+"""Validators for DB models."""
+
 import flask_validator
+
 
 class ValidateString(flask_validator.ValidateString):
     """Modified string validator that supports non empty string enforcement."""
