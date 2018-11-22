@@ -35,7 +35,7 @@ class VisibilityFinder(object):
         sat_pos = self.sat_irp.interpolate(posix_time)[0]
         sat_site = np.subtract(sat_pos, site_pos)
 
-        return (sat_site * site_normal_pos) / np.linalg.norm(sat_site)
+        return np.dot(sat_site, site_normal_pos) / np.linalg.norm(sat_site)
 
     def visibility_first_derivative(self, time):
         """Calculate the derivative of the visibility function of the satellite and the site at a
@@ -57,9 +57,9 @@ class VisibilityFinder(object):
         site_normal_vel = site_pos_vel[1]/np.linalg.norm(site_pos_vel[1])
 
         return (((1/np.linalg.norm(sat_site_pos)) *
-                 (sat_site_vel * site_normal_pos) + (site_normal_pos * site_normal_vel)) -
+                 np.dot(sat_site_vel * site_normal_pos) + np.dot(site_normal_pos * site_normal_vel)) -
                 ((1/np.linalg.norm(sat_site_pos)**3) *
-                 (sat_site_pos * sat_site_vel) * (sat_site_pos * site_normal_pos)))
+                 np.dot(sat_site_pos * sat_site_vel) * np.dot(sat_site_pos * site_normal_pos)))
 
 
     def visibility_fourth_derivative(self, time, sub_interval):
