@@ -11,3 +11,5 @@ exclude_lines =
 ignore_errors = True
 omit =
     test/*
+    tuples.py
+
