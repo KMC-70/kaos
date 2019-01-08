@@ -57,12 +57,12 @@ class VisibilityFinder(object):
         site_normal_vel = site_pos_vel[1] / np.linalg.norm(site_pos_vel[1])
 
         first_term = ((1 / np.linalg.norm(sat_site_pos)) *
-                      (np.dot(sat_site_vel * site_normal_pos) +
-                       np.dot(site_normal_pos * site_normal_vel)))
+                      (np.dot(sat_site_vel, site_normal_pos) +
+                       np.dot(sat_site_pos, site_normal_vel)))
 
         second_term = ((1/np.linalg.norm(sat_site_pos) ** 3) *
-                       np.dot(sat_site_pos * sat_site_vel) *
-                       np.dot(sat_site_pos * site_normal_pos))
+                       np.dot(sat_site_pos, sat_site_vel) *
+                       np.dot(sat_site_pos, site_normal_pos))
 
         return  first_term - second_term
 
@@ -131,6 +131,12 @@ class VisibilityFinder(object):
         # paper
         return (120 * a5 * time) + (24 * a4)
 
+
+    def find_roots(self, interval,):
+        """TODO: Docstring for find_roots.
+        """
+        pass
+
     def determine_visibility(self, error=0.01, tolerance_ratio=0.1, max_iter=1000):
         """Using the self adapting interpolation algorithm described in the cited paper, this
         function returns the subintervals for which the satellites have visibility.
@@ -189,7 +195,10 @@ class VisibilityFinder(object):
             # to keep the error low
             new_time_step = new_time_step_1
             subinterval_end = subinterval_start + new_time_step
-            # TODO Resolve roots
+
+            # TODO Approximate V(t) on the current subinterval and resolve its roots
+            # TODO Look at C(t) expand and collect terms such that the resulting expression is an
+            # array like expression where each index is the coeefcient at a particular power
 
             # Set the start time and time step for the next interval
             subinterval_start = subinterval_end
