@@ -281,7 +281,9 @@ class VisibilityFinder(object):
             subinterval_end = subinterval_start + new_time_step
 
             # TODO Don't know what to do with this return
+            import pdb; pdb.set_trace()
             self.find_visibility((subinterval_start, subinterval_end))
+
 
             # Set the start time and time step for the next interval
             subinterval_start = subinterval_end
