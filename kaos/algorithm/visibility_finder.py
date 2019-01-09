@@ -1,4 +1,4 @@
-"""This module contains all functions required to perform the self adating hermite computations."""
+"""This module contains all functions required to perform the self adapting Hermite computations."""
 
 import numpy as np
 
@@ -12,7 +12,7 @@ class VisibilityFinder(object):
     def __init__(self, satellite_id, site, interval):
         """Args:
             sattelite_id (integer): Satellite ID in the database
-            site (tuple:float): The site location as a lat/lon tupple
+            site (tuple:float): The site location as a lat/lon tuple
             interval (tuple:float): The search window as a start_time, end_time tuple
         """
         self.satellite_id = satellite_id
@@ -82,7 +82,10 @@ class VisibilityFinder(object):
         at a given time.
 
         Args:
-            time_interval (
+            time (float): The time at which to evaluate the fourth derivative of the  visibility
+                          function
+            time_interval (tuple): A tuple containing the time stamps that mark the boundaries of
+                                   the subinterval under consideration.
 
         Returns:
             The value of the visibility function evaluated at the provided time.
@@ -131,11 +134,81 @@ class VisibilityFinder(object):
         # paper
         return (120 * a5 * time) + (24 * a4)
 
+    def find_approx_coeffs(self, start_time, end_time):
+        """Calculates the coefficients of the Hermite approximation to the visibility function for a
+        given interval.
 
-    def find_roots(self, interval,):
-        """TODO: Docstring for find_roots.
+        Args:
+            start_timer (float): The UNIX time-stamp corresponding to the beginning of the period to
+                                 be interpolated
+            end_timer (float): The UNIX time-stamp corresponding to the end of the period to be
+                               interpolated
+
+        Returns:
+            An array containing the coefficients for the Hermite approximation of the
+            visibility function
+
+        Note:
+            The coefficients do not take into account the visibility angle theta.
+
         """
-        pass
+        time_step = end_time - start_time
+        visibility_start = self.visibility(start_time)
+        visibility_end = self.visibility(end_time)
+        visibility_first_start = self.visibility_first_derivative(start_time)
+        visibility_first_end = self.visibility_first_derivative(end_time)
+
+
+        const = (((-1 * (start_time ** 3) * visibility_start) / (time_step ** 3)) +
+                 ((2 * (start_time ** 3) * visibility_end) / (time_step ** 2)) +
+                 ((-1 * (start_time ** 2) * end_time * visibility_first_end) / (time_step ** 2)) +
+                 ((-1 * 3 * (start_time ** 2) * visibility_first_start) / (time_step ** 2)) +
+                 ((3 * (start_time ** 2) * visibility_first_end) / (time_step ** 2)) +
+                 ((-1 * start_time * (end_time ** 2) * visibility_first_start) / (time_step ** 2)) +
+                 visibility_first_start
+                )
+
+        t_coeffs = (((6 * (start_time ** 2) * visibility_start) / (time_step ** 3)) +
+                    ((-1 * 6 * (start_time ** 2) * visibility_end) / (time_step ** 3)) +
+                    (((start_time ** 2) * visibility_first_end) / (time_step ** 2)) +
+                    ((2 * start_time * end_time * visibility_first_start) / (time_step ** 2)) +
+                    ((2 * start_time * end_time * visibility_first_end) / (time_step ** 2)) +
+                    ((6 * start_time * visibility_start) / (time_step ** 2)) +
+                    ((-1 * 6 * start_time * visibility_end) / (time_step ** 2)) +
+                    (((end_time ** 2) * visibility_first_start) / (time_step ** 2))
+                   )
+
+        t_2_coeffs = (((-1 * 6 * start_time * visibility_start) / (time_step ** 3)) +
+                      ((6 * start_time * visibility_end) / (time_step ** 3)) +
+                      ((-1 * start_time * visibility_first_start) / (time_step ** 2)) +
+                      ((-1 * 2 * start_time * visibility_first_end) / (time_step ** 2)) +
+                      ((-1 * 2 * end_time * visibility_first_start) / (time_step ** 2)) +
+                      ((-1 * end_time * visibility_first_end) / (time_step ** 2)) +
+                      ((-1 * 3 * visibility_start) / (time_step ** 2)) +
+                      ((-1 * 3 * visibility_end) / (time_step ** 2))
+                     )
+
+        t_3_coeffs = (((2 * visibility_start) / (time_step ** 3)) +
+                      ((-1 * 2 * visibility_end) / (time_step ** 3)) +
+                      ((visibility_first_start) / (time_step ** 2)) +
+                      ((visibility_first_end) / (time_step ** 2))
+                     )
+
+        return [t_3_coeffs, t_2_coeffs, t_coeffs, const]
+
+    def find_visibility(self, time_interval):
+        """Given a sub interval, this function uses the adaptive Hermite interpolation method to
+        calculate the roots of the visibility function and hence the visibility period.
+
+        Args:
+            time_interval (tuple): The subinterval over which the visibility period is to be
+            calculated.
+
+        """
+        # Calculate angle of visibility theta.
+        roots = np.roots(self.find_approx_coeffs(*time_interval))
+        # TODO I HAVE NO IDEA HOW THIS WILL WORK or what this will do, save me
+        return None
 
     def determine_visibility(self, error=0.01, tolerance_ratio=0.1, max_iter=1000):
         """Using the self adapting interpolation algorithm described in the cited paper, this
@@ -198,7 +271,7 @@ class VisibilityFinder(object):
 
             # TODO Approximate V(t) on the current subinterval and resolve its roots
             # TODO Look at C(t) expand and collect terms such that the resulting expression is an
-            # array like expression where each index is the coeefcient at a particular power
+            # array like expression where each index is the coeffcient at a particular power
 
             # Set the start time and time step for the next interval
             subinterval_start = subinterval_end
