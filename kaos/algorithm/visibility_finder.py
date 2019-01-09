@@ -68,6 +68,17 @@ class VisibilityFinder(object):
 
 
     def bound_time_step_error(self, interval, error):
+        """Corrects the time step for the current sub interval as to mach error to the desired rate.
+
+        Args:
+            interval (tuple): The two UNIX timestamps that bound the desired sub-interval
+            error (float): The desired approximate error in results
+
+        Returns:
+            The new time step to use in order to mach the approximate error.
+
+        Note:
+        """
         # First we compute the maximum of the fourth derivative as per Eq 8 in the referenced
         # paper
         visibility_4_prime_max = self.visibility_fourth_derivative(interval[1], interval)
@@ -269,11 +280,11 @@ class VisibilityFinder(object):
             new_time_step = new_time_step_1
             subinterval_end = subinterval_start + new_time_step
 
-            # TODO Approximate V(t) on the current subinterval and resolve its roots
-            # TODO Look at C(t) expand and collect terms such that the resulting expression is an
-            # array like expression where each index is the coeffcient at a particular power
+            # TODO Don't know what to do with this return
+            self.find_visibility((subinterval_start, subinterval_end))
 
             # Set the start time and time step for the next interval
             subinterval_start = subinterval_end
             prev_time_step = new_time_step
 
+        return []

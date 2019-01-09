@@ -1,6 +1,8 @@
 """Testing the visibility_finder."""
 from kaos.algorithm.coord_conversion import lla_to_eci
 from kaos.algorithm.visibility_finder import VisibilityFinder
+from kaos.models import DB, Satellite, ResponseHistory, OrbitSegment, OrbitRecord
+from kaos.models.parser import *
 import numpy as np
 import unittest
 
@@ -8,7 +10,7 @@ from .. import KaosTestCase
 
 
 class TestVisibilityFinder(KaosTestCase):
-
+    """
     def test_first_derivative(self):
         # testing point r_site (the coordinates(Lat, Longi, r_earth, epoch_time_J2000) of vancouver
         # generated from STK)
@@ -35,5 +37,12 @@ class TestVisibilityFinder(KaosTestCase):
         self.assertAlmostEqual(finder.visibility_first_derivative(r_site_spherical[3]),
                                visibility_prime)
         #import pdb; pdb.set_trace()
+        """
+
+    def test_vis(self):
+        parse_ephemeris_file("ephemeris/Radarsat2_J2000.e")
+        x = VisibilityFinder(1, (49.07, -123.113), (1514764800,1514770200))
+        import pdb; pdb.set_trace()
+
 
 
