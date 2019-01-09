@@ -3,16 +3,36 @@ from kaos.algorithm.coord_conversion import lla_to_eci
 from kaos.algorithm.visibility_finder import VisibilityFinder
 import numpy as np
 import unittest
-
+from mock import patch
 from .. import KaosTestCase
-
+from kaos.algorithm.interpolator import Interpolator
 
 class TestVisibilityFinder(KaosTestCase):
-
-    def test_first_derivative(self):
+    @patch('kaos.algorithm.interpolator.Interpolator.interpolate', return_value=
+    ((-6.9980497691646582e+06, -1.4019786400312854e+06, 7.0754554424135364e+05),
+     (-9.4202033738527109e+02, 9.5296010534027573e+02, -7.3355694593015414e+03)))
+    def test_visibility(self, interpolate):
         # testing point r_site (the coordinates(Lat, Longi, r_earth, epoch_time_J2000) of vancouver
         # generated from STK)
-        r_site_spherical = (49.07, -123.113, 6365930, 946684800)
+        r_site_spherical = (49.07, -123.113, 0, 946684800)
+        # convert to eci since r_sat and v_sat are in eci(J2000) (Assume lla_to_eci works correctly)
+        r_site = lla_to_eci(*r_site_spherical)[0]
+        # testing point r_sat and v_sat(the first line in Radarsat2_J2000.e under ephemeris)
+        r_sat = (-6.9980497691646582e+06, -1.4019786400312854e+06, 7.0754554424135364e+05)
+        delta_r = np.subtract(r_sat, r_site)
+        r_site_0 = r_site / np.linalg.norm(delta_r)
+
+        visibility = np.dot(delta_r, r_site_0) / np.linalg.norm(r_site)
+        finder = VisibilityFinder(1, (49.07, -123.113), (946684800, 0))
+        self.assertAlmostEqual(finder.visibility(946684800), visibility)
+
+    @patch('kaos.algorithm.interpolator.Interpolator.interpolate', return_value=
+    ((-6.9980497691646582e+06, -1.4019786400312854e+06, 7.0754554424135364e+05),
+     (-9.4202033738527109e+02, 9.5296010534027573e+02, -7.3355694593015414e+03)))
+    def test_visibility_first_derivative(self, interpolate):
+        # testing point r_site (the coordinates(Lat, Longi, r_earth, epoch_time_J2000) of vancouver
+        # generated from STK)
+        r_site_spherical = (49.07, -123.113, 0, 946684800)
         # convert to eci since r_sat and v_sat are in eci(J2000) (Assume lla_to_eci works correctly)
         r_site, v_site = lla_to_eci(*r_site_spherical)
 
@@ -31,9 +51,7 @@ class TestVisibilityFinder(KaosTestCase):
                            -(1/(np.linalg.norm(delta_r))**3) * \
                            np.dot(np.dot(delta_r, delta_r_prime)*delta_r,r_site_0)
 
-        finder = VisibilityFinder(1, 946684800, 9466848210)
-        self.assertAlmostEqual(finder.visibility_first_derivative(r_site_spherical[3]),
-                               visibility_prime)
+        finder = VisibilityFinder(1,(49.07, -123.113), (946684800,0))
+        self.assertAlmostEqual(finder.visibility_first_derivative(946684800), visibility_prime)
         #import pdb; pdb.set_trace()
-
 
