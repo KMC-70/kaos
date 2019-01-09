@@ -159,13 +159,13 @@ class VisibilityFinder(object):
         visibility_first_end = self.visibility_first_derivative(end_time)
 
 
-        const = (((-1 * (start_time ** 3) * visibility_start) / (time_step ** 3)) +
-                 ((2 * (start_time ** 3) * visibility_end) / (time_step ** 2)) +
+        const = (((-2 * (start_time ** 3) * visibility_start) / (time_step ** 3)) +
+                 ((2 * (start_time ** 3) * visibility_end) / (time_step ** 3)) +
                  ((-1 * (start_time ** 2) * end_time * visibility_first_end) / (time_step ** 2)) +
-                 ((-1 * 3 * (start_time ** 2) * visibility_first_start) / (time_step ** 2)) +
-                 ((3 * (start_time ** 2) * visibility_first_end) / (time_step ** 2)) +
+                 ((-1 * 3 * (start_time ** 2) * visibility_start) / (time_step ** 2)) +
+                 ((3 * (start_time ** 2) * visibility_end) / (time_step ** 2)) +
                  ((-1 * start_time * (end_time ** 2) * visibility_first_start) / (time_step ** 2)) +
-                 visibility_first_start
+                 visibility_start
                 )
 
         t_coeffs = (((6 * (start_time ** 2) * visibility_start) / (time_step ** 3)) +
@@ -185,7 +185,7 @@ class VisibilityFinder(object):
                       ((-1 * 2 * end_time * visibility_first_start) / (time_step ** 2)) +
                       ((-1 * end_time * visibility_first_end) / (time_step ** 2)) +
                       ((-1 * 3 * visibility_start) / (time_step ** 2)) +
-                      ((-1 * 3 * visibility_end) / (time_step ** 2))
+                      ((3 * visibility_end) / (time_step ** 2))
                      )
 
         t_3_coeffs = (((2 * visibility_start) / (time_step ** 3)) +
