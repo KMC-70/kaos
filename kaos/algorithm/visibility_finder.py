@@ -82,6 +82,7 @@ class VisibilityFinder(object):
         # First we compute the maximum of the fourth derivative as per Eq 8 in the referenced
         # paper
         visibility_4_prime_max = self.visibility_fourth_derivative(interval[1], interval)
+        import pdb; pdb.set_trace()
 
         # Then we use the error and Eq 9 to calculate the new time_step.
         return pow((16 * error) / (visibility_4_prime_max / 24), 0.25)
@@ -218,6 +219,7 @@ class VisibilityFinder(object):
         """
         # Calculate angle of visibility theta.
         roots = np.roots(self.find_approx_coeffs(*time_interval))
+        # TODO we need to look at the roots and ignore ones outside the time interval
         # TODO I HAVE NO IDEA HOW THIS WILL WORK or what this will do, save me
         return None
 

@@ -59,6 +59,6 @@ class TestVisibilityFinder(KaosTestCase):
     def test_vis(self):
         parse_ephemeris_file("ephemeris/Radarsat2_J2000.e")
         x = VisibilityFinder(1, (49.07, -123.113), (1514764800,1514770200))
-        import pdb; pdb.set_trace()
+        x.determine_visibility()
 
 
