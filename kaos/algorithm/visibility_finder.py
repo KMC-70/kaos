@@ -35,7 +35,7 @@ class VisibilityFinder(object):
         sat_pos = self.sat_irp.interpolate(posix_time)[0]
         sat_site = np.subtract(sat_pos, site_pos)
 
-        return np.dot(sat_site, site_normal_pos) / np.linalg.norm(sat_site)
+        return float(np.dot(sat_site, site_normal_pos) / np.linalg.norm(sat_site))
 
     def visibility_first_derivative(self, time):
         """Calculate the derivative of the visibility function of the satellite and the site at a
@@ -81,15 +81,14 @@ class VisibilityFinder(object):
         """
         # First we compute the maximum of the fourth derivative as per Eq 8 in the referenced
         # paper
-        visibility_4_prime_max = self.visibility_fourth_derivative(interval[1], interval)
-        import pdb; pdb.set_trace()
+        visibility_4_prime_max = self.visibility_fourth_derivative(interval)
 
         # Then we use the error and Eq 9 to calculate the new time_step.
         return pow((16 * error) / (visibility_4_prime_max / 24), 0.25)
 
 
 
-    def visibility_fourth_derivative(self, time, sub_interval):
+    def visibility_fourth_derivative(self, sub_interval):
         """Calculate the fourth derivative of the visibility function of the satellite and the site
         at a given time.
 
@@ -117,34 +116,37 @@ class VisibilityFinder(object):
         #   1- The interval start
         #   2- The interval midpoint
         #   3- The interval end
-        visibility_start = self.visibility(start_time)
-        visibility_mid = self.visibility(mid_time)
-        visibility_end = self.visibility(end_time)
+        visibility_start = float(self.visibility(start_time))
+        visibility_mid = float(self.visibility(mid_time))
+        visibility_end = float(self.visibility(end_time))
 
-        visibility_d_start = self.visibility_first_derivative(start_time)
-        visibility_d_mid = self.visibility_first_derivative(mid_time)
-        visibility_d_end = self.visibility_first_derivative(end_time)
+        visibility_d_start = float(self.visibility_first_derivative(start_time))
+        visibility_d_mid = float(self.visibility_first_derivative(mid_time))
+        visibility_d_end = float(self.visibility_first_derivative(end_time))
 
         # Calculating the a5 and a4 constants used in the approximation
-        a5 = (((24 / interval_length ** 5) * (visibility_start - visibility_end)) +
-              ((4 / interval_length**4) *
-               (visibility_d_start + (4 * visibility_d_mid) + visibility_d_end)))
+        a5 = (((24.0 / interval_length ** 5.0) * (visibility_start - visibility_end)) +
+              ((4.0 / interval_length**4.0) *
+               (visibility_d_start + (4.0 * visibility_d_mid) + visibility_d_end)))
 
         # Since a4's computation is complex, it was split into several parts
-        a4_first_term = ((4 / interval_length ** 4) *
-                         (visibility_start + (4 * visibility_mid) + visibility_end))
-        a4_second_term = ((4 / interval_length ** 4) *
-                          ((visibility_d_start * ((2 * start_time) + (3 * end_time))) +
-                           ((10 * visibility_d_mid) * (start_time + end_time)) +
-                           (visibility_d_end * ((3 * start_time) + (2 * end_time)))))
-        a4_third_term = ((24 / interval_length ** 5) *
-                         ((visibility_start * ((2 * start_time) + (3 * end_time))) -
-                          (visibility_end * ((3 * start_time) + (2 * end_time)))))
+        a4_first_term = ((4.0 / interval_length ** 4.0) *
+                         (visibility_start + (4.0 * visibility_mid) + visibility_end))
+        a4_second_term = ((4.0 / interval_length ** 4) *
+                          ((visibility_d_start * ((2.0 * start_time) + (3.0 * end_time))) +
+                           ((10.0 * visibility_d_mid) * (start_time + end_time)) +
+                           (visibility_d_end * ((3.0 * start_time) + (2.0 * end_time)))))
+        a4_third_term = ((24.0 / interval_length ** 5.0) *
+                         ((visibility_start * ((2.0 * start_time) + (3.0 * end_time))) -
+                          (visibility_end * ((3.0 * start_time) + (2.0 * end_time)))))
         a4 = a4_first_term - a4_second_term - a4_third_term
 
         # Using the above co-efficients we can determine the approximation as per Eq 5 of the cited
         # paper
-        return (120 * a5 * time) + (24 * a4)
+        if a5 > 0:
+            return (120 * a5 * end_time) + (24 * a4)
+        else:
+            return (120 * a5 * start_time) + (24 * a4)
 
     def find_approx_coeffs(self, start_time, end_time):
         """Calculates the coefficients of the Hermite approximation to the visibility function for a
@@ -221,9 +223,9 @@ class VisibilityFinder(object):
         roots = np.roots(self.find_approx_coeffs(*time_interval))
         # TODO we need to look at the roots and ignore ones outside the time interval
         # TODO I HAVE NO IDEA HOW THIS WILL WORK or what this will do, save me
-        return None
+        return roots
 
-    def determine_visibility(self, error=0.01, tolerance_ratio=0.1, max_iter=1000):
+    def determine_visibility(self, error=0.2, tolerance_ratio=0.5, max_iter=1000):
         """Using the self adapting interpolation algorithm described in the cited paper, this
         function returns the subintervals for which the satellites have visibility.
 
@@ -283,8 +285,8 @@ class VisibilityFinder(object):
             subinterval_end = subinterval_start + new_time_step
 
             # TODO Don't know what to do with this return
+            roots = self.find_visibility((subinterval_start, subinterval_end))
             import pdb; pdb.set_trace()
-            self.find_visibility((subinterval_start, subinterval_end))
 
 
             # Set the start time and time step for the next interval
