@@ -1,6 +1,8 @@
 """This module contains all functions required to perform the self adapting Hermite computations."""
 
+from __future__ import division
 import numpy as np
+from mpmath import *
 
 from .interpolator import Interpolator
 from .coord_conversion import lla_to_eci
@@ -56,37 +58,15 @@ class VisibilityFinder(object):
         site_normal_pos = site_pos_vel[0] / np.linalg.norm(site_pos_vel[0])
         site_normal_vel = site_pos_vel[1] / np.linalg.norm(site_pos_vel[1])
 
-        first_term = ((1 / np.linalg.norm(sat_site_pos)) *
+        first_term = ((1.0 / np.linalg.norm(sat_site_pos)) *
                       (np.dot(sat_site_vel, site_normal_pos) +
                        np.dot(sat_site_pos, site_normal_vel)))
 
-        second_term = ((1/np.linalg.norm(sat_site_pos) ** 3) *
+        second_term = ((1.0 / (np.linalg.norm(sat_site_pos) ** 3.0)) *
                        np.dot(sat_site_pos, sat_site_vel) *
                        np.dot(sat_site_pos, site_normal_pos))
 
         return  first_term - second_term
-
-
-    def bound_time_step_error(self, interval, error):
-        """Corrects the time step for the current sub interval as to mach error to the desired rate.
-
-        Args:
-            interval (tuple): The two UNIX timestamps that bound the desired sub-interval
-            error (float): The desired approximate error in results
-
-        Returns:
-            The new time step to use in order to mach the approximate error.
-
-        Note:
-        """
-        # First we compute the maximum of the fourth derivative as per Eq 8 in the referenced
-        # paper
-        visibility_4_prime_max = self.visibility_fourth_derivative(interval)
-
-        # Then we use the error and Eq 9 to calculate the new time_step.
-        return pow((16 * error) / (visibility_4_prime_max / 24), 0.25)
-
-
 
     def visibility_fourth_derivative(self, sub_interval):
         """Calculate the fourth derivative of the visibility function of the satellite and the site
@@ -125,18 +105,18 @@ class VisibilityFinder(object):
         visibility_d_end = float(self.visibility_first_derivative(end_time))
 
         # Calculating the a5 and a4 constants used in the approximation
-        a5 = (((24.0 / interval_length ** 5.0) * (visibility_start - visibility_end)) +
-              ((4.0 / interval_length**4.0) *
+        a5 = (((24.0 / (interval_length ** 5.0)) * (visibility_start - visibility_end)) +
+              ((4.0 / (interval_length ** 4.0)) *
                (visibility_d_start + (4.0 * visibility_d_mid) + visibility_d_end)))
 
         # Since a4's computation is complex, it was split into several parts
-        a4_first_term = ((4.0 / interval_length ** 4.0) *
+        a4_first_term = ((4.0 / (interval_length ** 4.0)) *
                          (visibility_start + (4.0 * visibility_mid) + visibility_end))
-        a4_second_term = ((4.0 / interval_length ** 4) *
+        a4_second_term = ((4.0 / (interval_length ** 4)) *
                           ((visibility_d_start * ((2.0 * start_time) + (3.0 * end_time))) +
                            ((10.0 * visibility_d_mid) * (start_time + end_time)) +
                            (visibility_d_end * ((3.0 * start_time) + (2.0 * end_time)))))
-        a4_third_term = ((24.0 / interval_length ** 5.0) *
+        a4_third_term = ((24.0 / (interval_length ** 5.0)) *
                          ((visibility_start * ((2.0 * start_time) + (3.0 * end_time))) -
                           (visibility_end * ((3.0 * start_time) + (2.0 * end_time)))))
         a4 = a4_first_term - a4_second_term - a4_third_term
@@ -147,6 +127,25 @@ class VisibilityFinder(object):
             return (120 * a5 * end_time) + (24 * a4)
         else:
             return (120 * a5 * start_time) + (24 * a4)
+
+    def bound_time_step_error(self, interval, error):
+        """Corrects the time step for the current sub interval as to mach error to the desired rate.
+
+        Args:
+            interval (tuple): The two UNIX timestamps that bound the desired sub-interval
+            error (float): The desired approximate error in results
+
+        Returns:
+            The new time step to use in order to mach the approximate error.
+
+        Note:
+        """
+        # First we compute the maximum of the fourth derivative as per Eq 8 in the referenced
+        # paper
+        visibility_4_prime_max = self.visibility_fourth_derivative(interval)
+
+        # Then we use the error and Eq 9 to calculate the new time_step.
+        return pow((16.0 * error) / (visibility_4_prime_max / 24), 0.25)
 
     def find_approx_coeffs(self, start_time, end_time):
         """Calculates the coefficients of the Hermite approximation to the visibility function for a
@@ -166,11 +165,12 @@ class VisibilityFinder(object):
             The coefficients do not take into account the visibility angle theta.
 
         """
-        time_step = end_time - start_time
-        visibility_start = self.visibility(start_time)
-        visibility_end = self.visibility(end_time)
-        visibility_first_start = self.visibility_first_derivative(start_time)
-        visibility_first_end = self.visibility_first_derivative(end_time)
+        mp.dps = 100
+        time_step = mpf(end_time - start_time)
+        visibility_start = mpf(self.visibility(start_time))
+        visibility_end = mpf(self.visibility(end_time))
+        visibility_first_start = mpf(self.visibility_first_derivative(start_time))
+        visibility_first_end = mpf(self.visibility_first_derivative(end_time))
 
 
         const = (((-2 * (start_time ** 3) * visibility_start) / (time_step ** 3)) +
@@ -208,6 +208,7 @@ class VisibilityFinder(object):
                       ((visibility_first_end) / (time_step ** 2))
                      )
 
+
         return [t_3_coeffs, t_2_coeffs, t_coeffs, const]
 
     def find_visibility(self, time_interval):
@@ -225,7 +226,7 @@ class VisibilityFinder(object):
         # TODO I HAVE NO IDEA HOW THIS WILL WORK or what this will do, save me
         return roots
 
-    def determine_visibility(self, error=0.2, tolerance_ratio=0.5, max_iter=1000):
+    def determine_visibility(self, error=0.1, tolerance_ratio=0.1, max_iter=1000000):
         """Using the self adapting interpolation algorithm described in the cited paper, this
         function returns the subintervals for which the satellites have visibility.
 
@@ -264,16 +265,18 @@ class VisibilityFinder(object):
 
         while subinterval_end < end_time:
             new_time_step_1 = prev_time_step
+
             # Hack loop since python does not support do-while
             iter_num = 0
             while True:
                 subinterval_end = subinterval_start + new_time_step_1
                 new_time_step_2 = self.bound_time_step_error((subinterval_start, subinterval_end),
                                                              error)
-                if (abs(new_time_step_2 - new_time_step_1) / new_time_step_1) <= tolerance_ratio:
+                if (float(abs(new_time_step_2 - new_time_step_1)) / new_time_step_1) <= tolerance_ratio:
                     break
 
                 if (iter_num >= max_iter) and (new_time_step_1 <= new_time_step_2):
+                    import pdb; pdb.set_trace()
                     break
 
                 new_time_step_1 = new_time_step_2
@@ -284,10 +287,11 @@ class VisibilityFinder(object):
             new_time_step = new_time_step_1
             subinterval_end = subinterval_start + new_time_step
 
-            # TODO Don't know what to do with this return
             roots = self.find_visibility((subinterval_start, subinterval_end))
-            import pdb; pdb.set_trace()
-
+            roots = [root for root in roots[np.isreal(roots)]
+                     if root <= subinterval_end and root >= subinterval_start]
+            if roots:
+                import pdb; pdb.set_trace()
 
             # Set the start time and time step for the next interval
             subinterval_start = subinterval_end

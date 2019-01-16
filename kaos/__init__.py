@@ -1,5 +1,6 @@
 """KAOS application initialization code."""
 
+from __future__ import division
 from flask import Flask, jsonify
 
 from kaos.api.errors import APIError
