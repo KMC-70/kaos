@@ -2,8 +2,9 @@
 
 from __future__ import division
 import numpy as np
-# from mpmath import *
-import mpmath as mpmath
+import mpmath
+import mpmath as mp
+mp.mp.dps = 100
 
 from .interpolator import Interpolator
 from .coord_conversion import lla_to_eci
@@ -50,22 +51,21 @@ class VisibilityFinder(object):
         Returns:
             The value of the visibility function evaluated at the provided time.
         """
-        time = float(time)
-        sat_pos_vel = self.sat_irp.interpolate(time)
+        sat_pos_vel = self.sat_irp.interpolate(float(time))
         site_pos_vel = lla_to_eci(self.site[0], self.site[1], 0, time)
         sat_site_pos = np.subtract(sat_pos_vel[0], site_pos_vel[0])
         sat_site_vel = np.subtract(sat_pos_vel[1], site_pos_vel[1])
 
-        site_normal_pos = site_pos_vel[0] / np.linalg.norm(site_pos_vel[0])
-        site_normal_vel = site_pos_vel[1] / np.linalg.norm(site_pos_vel[1])
+        site_normal_pos = np.divide(site_pos_vel[0], mp.norm(site_pos_vel[0]))
+        site_normal_vel = np.divide(site_pos_vel[1], mp.norm(site_pos_vel[1]))
 
-        first_term = mpmath.mpf(((1.0 / np.linalg.norm(sat_site_pos)) *
-                      (np.dot(sat_site_vel, site_normal_pos) +
-                       np.dot(sat_site_pos, site_normal_vel))))
+        first_term = mp.mpf(((1.0 / mp.norm(sat_site_pos)) *
+                             (mp.fdot(sat_site_vel, site_normal_pos) +
+                              mp.fdot(sat_site_pos, site_normal_vel))))
 
-        second_term = mpmath.mpf(((1.0 / (np.linalg.norm(sat_site_pos) ** 3.0)) *
-                       np.dot(sat_site_pos, sat_site_vel) *
-                       np.dot(sat_site_pos, site_normal_pos)))
+        second_term = mp.mpf(((1.0 / (mp.norm(sat_site_pos) ** 3.0)) *
+                              mp.fdot(sat_site_pos, sat_site_vel) *
+                              mp.fdot(sat_site_pos, site_normal_pos)))
 
         return  first_term - second_term
 
@@ -87,7 +87,6 @@ class VisibilityFinder(object):
             paper.
         """
         #pylint: disable=too-many-locals
-        mpmath.mp.dps = 50
         start_time, end_time = sub_interval
         interval_length = end_time - start_time
         mid_time = start_time + (interval_length / 2)
@@ -97,16 +96,16 @@ class VisibilityFinder(object):
         #   1- The interval start
         #   2- The interval midpoint
         #   3- The interval end
-        visibility_start = mpmath.mpf(self.visibility(start_time))
-        visibility_mid = mpmath.mpf(self.visibility(mid_time))
-        visibility_end = mpmath.mpf(self.visibility(end_time))
+        visibility_start = mp.mpf(self.visibility(start_time))
+        visibility_mid = mp.mpf(self.visibility(mid_time))
+        visibility_end = mp.mpf(self.visibility(end_time))
 
-        visibility_d_start = mpmath.mpf(self.visibility_first_derivative(start_time))
-        visibility_d_mid = mpmath.mpf(self.visibility_first_derivative(mid_time))
-        visibility_d_end = mpmath.mpf(self.visibility_first_derivative(end_time))
+        visibility_d_start = mp.mpf(self.visibility_first_derivative(start_time))
+        visibility_d_mid = mp.mpf(self.visibility_first_derivative(mid_time))
+        visibility_d_end = mp.mpf(self.visibility_first_derivative(end_time))
 
         # Calculating the a5 and a4 constants used in the approximation
-        a5 = mpmath.mpf((((24.0 / (interval_length ** 5.0)) * (visibility_start - visibility_end)) +
+        a5 = mp.mpf((((24.0 / (interval_length ** 5.0)) * (visibility_start - visibility_end)) +
               ((4.0 / (interval_length ** 4.0)) *
                (visibility_d_start + (4.0 * visibility_d_mid) + visibility_d_end))))
 
@@ -165,7 +164,6 @@ class VisibilityFinder(object):
         Note:
             The coefficients do not take into account the visibility angle theta.
         """
-        mpmath.mp.dps = 50
         time_step = mpmath.mpf(end_time - start_time)
         visibility_start = mpmath.mpf(self.visibility(start_time))
         visibility_end = mpmath.mpf(self.visibility(end_time))
@@ -273,22 +271,23 @@ class VisibilityFinder(object):
 
         while subinterval_end < end_time:
             new_time_step_1 = prev_time_step
-
             # Hack loop since python does not support do-while
             iter_num = 0
-            # while True:
-            #     subinterval_end = subinterval_start + new_time_step_1
-            #     new_time_step_2 = self.bound_time_step_error((subinterval_start, subinterval_end),
-            #                                                  error)
-            #     if (float(abs(new_time_step_2 - new_time_step_1)) / new_time_step_1) <= tolerance_ratio:
-            #         break
+            """
+            while True:
+                subinterval_end = subinterval_start + new_time_step_1
+                new_time_step_2 = self.bound_time_step_error((subinterval_start, subinterval_end),
+                                                              error)
+                if (float(abs(new_time_step_2 - new_time_step_1)) / new_time_step_1) <= tolerance_ratio:
+                    break
 
-            #     if (iter_num >= max_iter) and (new_time_step_1 <= new_time_step_2):
-            #         break
+                if (iter_num >= max_iter) and (new_time_step_1 <= new_time_step_2):
+                    break
 
-            #     new_time_step_1 = new_time_step_2
-            #     iter_num += 1
+                new_time_step_1 = new_time_step_2
+                iter_num += 1
 
+            """
             # At this stage for the current interpolation stage the time step is sufficiently small
             # to keep the error low
             new_time_step = new_time_step_1
@@ -296,7 +295,8 @@ class VisibilityFinder(object):
 
             roots = self.find_visibility((subinterval_start, subinterval_end))
             error_val = self.visibility_fourth_derivative((subinterval_start,subinterval_end)) * (1/24) * (1/16) * mpmath.mpf(prev_time_step)**4
-            
+            import pdb; pdb.set_trace()
+
             print ("error value :")
             print(error_val)
             # # print(roots[np.isreal(roots)])
@@ -306,7 +306,7 @@ class VisibilityFinder(object):
             #     if root <= subinterval_end and root >= subinterval_start :
             #         print("ROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOT:")
             #         print(root)
-                    
+
             # print(subinterval_end)
             # if roots:
                 # import pdb; pdb.set_trace()

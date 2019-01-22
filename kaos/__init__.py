@@ -5,6 +5,9 @@ from flask import Flask, jsonify
 
 from kaos.api.errors import APIError
 
+from  mpmath import mp
+mp.dps = 100
+
 def create_app(config="settings.cfg"):
     """Create and setup the KAOS app."""
 
