@@ -13,8 +13,12 @@ class VisibilityFinder(object):
 
     """An adaptive visibility finder used to determine the visibility interval of a satellite."""
     times = []
-    aprox_values = []
     real_values = []
+    derivatives = []
+
+    aprox_times = []
+    aprox_values = []
+    zeors  = []
 
     def __init__(self, satellite_id, site, interval):
         """Args:
@@ -80,6 +84,7 @@ class VisibilityFinder(object):
                        mpmath.fdot(sat_site_pos, sat_site_vel) *
                        mpmath.fdot(sat_site_pos, site_normal_pos)))
 
+        print (first_term - second_term)
         return  first_term - second_term
 
     def visibility_fourth_derivative(self, sub_interval):
@@ -222,17 +227,24 @@ class VisibilityFinder(object):
                       ((visibility_first_end) / (time_step ** 2))
                      )
         midpoint_t = mpmath.mpf((start_time + end_time ) / 2.0)
-        print("approximate:")
-        aprox = mpmath.polyval([t_3_coeffs, t_2_coeffs, t_coeffs, const],midpoint_t)
-        print(aprox)
-        print("real:")
+        # print("approximate:")
+        # aprox = mpmath.polyval([t_3_coeffs, t_2_coeffs, t_coeffs, const],midpoint_t)
+        # print(aprox)
+        # print("real:")
         realval = self.visibility(midpoint_t)
-        print(realval)
-        print("real error: ")
-        print(abs(realval-aprox))
+        # print(realval)
+        # print("real error: ")
+        # print(abs(realval-aprox))
         self.times.append(midpoint_t)
-        self.aprox_values.append(aprox)
         self.real_values.append(realval)
+        self.derivatives.append(visibility_first_start)
+        self.zeors.append(0)
+        
+        for time in range(start_time, end_time, 1):
+            aprox = mpmath.polyval([t_3_coeffs, t_2_coeffs, t_coeffs, const],time)
+            self.aprox_values.append(aprox)
+            self.aprox_times.append(time)
+
         if realval>0:
             print('VISIBLE')
         return [t_3_coeffs, t_2_coeffs, t_coeffs, const]
@@ -308,7 +320,7 @@ class VisibilityFinder(object):
         # The subinterval_end is set to start the initial loop iteration
         subinterval_end = start_time
         # Defines the length of the initial subinterval (h)
-        prev_time_step = 5
+        prev_time_step = 100
 
         while subinterval_end < end_time:
             new_time_step_1 = prev_time_step
@@ -357,6 +369,6 @@ class VisibilityFinder(object):
 
 
 
-        plt.plot(self.times,self.real_values,"r--",self.times,self.aprox_values,"bs")
+        plt.plot(self.times,self.real_values,"r--",self.times, self.derivatives, "g--", self.times, self.zeors, "b--")#, self.aprox_times,self.aprox_values,"bs")
         plt.show()
         return []
