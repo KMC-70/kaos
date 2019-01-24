@@ -121,4 +121,5 @@ def parse_ephemeris_file(filename):
                 read_orbital_data = True
 
         DB.session.commit()
+        return sat.platform_id
 

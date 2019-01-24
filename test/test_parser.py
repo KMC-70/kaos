@@ -15,7 +15,7 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
 
     def test_ephemeris_parser_single_file(self):
         """Light test to ensure that the parser can correctly parse an ephemeris file."""
-        parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
+        sat_id = parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
 
         # test that the correct number of entries was created
         self.assertTrue(len(OrbitRecords.query.all()) == 17307) #taken from ephem file
@@ -43,9 +43,10 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
 
         for segment, seg_end in zip(query, seg_times[1:]):
             self.assertAlmostEqual(segment.end_time, seg_end, places=4)
+        self.assertEqual(sat_id, query[0].platform_id)
 
     def test_ephemeris_parser_multiple_file(self):
-        parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
+        sat_id = parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
         orbit = OrbitRecords()
 
         # test that the correct number of entries was created
@@ -64,3 +65,4 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
         # segments from both files
         self.assertTrue(len(orbit_segment.query.all()) == 28)
 
+        self.assertEqual(sat_id, orbit_segment.query.all()[0].platform_id)
