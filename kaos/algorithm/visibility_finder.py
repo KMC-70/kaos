@@ -16,10 +16,15 @@ class VisibilityFinder(object):
     times = []
     real_values = []
     derivatives = []
+    real_derivatives = []
+
+    magnitudes_time = []
+    magnitudes = []
 
     aprox_times = []
     aprox_values = []
     zeors  = []
+    aprox_values2 = []
 
     def __init__(self, satellite_id, site, interval):
         """Args:
@@ -43,12 +48,12 @@ class VisibilityFinder(object):
         Returns:
             The value of the visibility function evaluated at the provided time.
         """
-        mpmath.mp.dps = 50
         posix_time = float(posix_time)
-        site_pos = np.array(lla_to_eci(self.site[0], self.site[1], 0, posix_time)[0])*mpmath.mpf(1.0)
+        site_pos = np.array(lla_to_eci(self.site[0], self.site[1], 0, posix_time)[0]) * mp.mpf(1.0)
         site_normal_pos = site_pos/mpmath.norm(site_pos)
         sat_pos = self.sat_irp.interpolate(posix_time)[0]
         sat_site = np.subtract(sat_pos, site_pos)
+
         return mpmath.mpf(mpmath.fdot(sat_site, site_normal_pos) / mpmath.norm(sat_site))
 
     def visibility_first_derivative(self, time):
@@ -60,6 +65,7 @@ class VisibilityFinder(object):
 
         Returns:
             The value of the visibility function evaluated at the provided time.
+        """
         """
         sat_pos_vel = self.sat_irp.interpolate(float(time))
         site_pos_vel = lla_to_eci(self.site[0], self.site[1], 0, time)
@@ -76,7 +82,9 @@ class VisibilityFinder(object):
         second_term = mp.mpf(((1.0 / (mp.norm(sat_site_pos) ** 3.0)) *
                               mp.fdot(sat_site_pos, sat_site_vel) *
                               mp.fdot(sat_site_pos, site_normal_pos)))
-
+        """
+        real_function = lambda t:(self.visibility(t))
+        return mpmath.diff(real_function, float(time), h=1)
         return  first_term - second_term
 
     def visibility_fourth_derivative(self, sub_interval):
@@ -181,6 +189,19 @@ class VisibilityFinder(object):
         visibility_first_start = mpmath.mpf(self.visibility_first_derivative(start_time))
         visibility_first_end = mpmath.mpf(self.visibility_first_derivative(end_time))
 
+        print ("start_time : ", start_time)
+        # print ("visibility_start : ", visibility_start)
+        # print ("visibility_end : ", visibility_end)
+        # print ("visibility_first_start : ", visibility_first_start)
+        # print ("visibility_first_end : ", visibility_first_end)
+
+        approximation_formula = lambda t:(
+            ( ( (time_step + 2*(end_time-t)) * (mpmath.power((start_time-t),2)))/(mpmath.power(time_step,3))*(visibility_end)         ) +
+            ( ( (time_step + 2*(t-start_time)) * (mpmath.power((end_time-t),2)))/(mpmath.power(time_step,3))*(visibility_start)       ) +
+            ( ( (mpmath.power((t-start_time),2))*(t-end_time)                  )/(mpmath.power(time_step,2))*(visibility_first_end)   ) +
+            ( ( (t-start_time)*(mpmath.power((t-end_time),2))                  )/(mpmath.power(time_step,2))*(visibility_first_start) )
+         )
+
 
         const = (((-2 * (start_time ** 3) * visibility_start) / (time_step ** 3)) +
                  ((2 * (start_time ** 3) * visibility_end) / (time_step ** 3)) +
@@ -225,14 +246,19 @@ class VisibilityFinder(object):
         # print(realval)
         # print("real error: ")
         # print(abs(realval-aprox))
+        real_function = lambda t:(self.visibility(t))
         self.times.append(midpoint_t)
         self.real_values.append(realval)
-        self.derivatives.append(visibility_first_start)
+        first_derivative = mpmath.diff(real_function, midpoint_t, h=1)
+        print(first_derivative)
+        self.real_derivatives.append(first_derivative)
+        self.derivatives.append(mpmath.mpf(self.visibility_first_derivative(midpoint_t)))
         self.zeors.append(0)
         
         for time in range(start_time, end_time, 1):
             aprox = mpmath.polyval([t_3_coeffs, t_2_coeffs, t_coeffs, const],time)
-            self.aprox_values.append(aprox)
+            # self.aprox_values.append(aprox)
+            self.aprox_values.append(approximation_formula(time))
             self.aprox_times.append(time)
 
         if realval>0:
@@ -249,29 +275,29 @@ class VisibilityFinder(object):
 
         """
         # Calculate angle of visibility theta.
+        roots = []
         roots = mpmath.polyroots(self.find_approx_coeffs(*time_interval),maxsteps=2000, extraprec=110)
+        self.find_approx_coeffs(*time_interval)
+
+        #start_time, end_time = time_interval
+        #time_step = mpmath.mpf(end_time - start_time)
+        #visibility_start = mpmath.mpf(self.visibility(start_time))
+        #visibility_end = mpmath.mpf(self.visibility(end_time))
+        #visibility_first_start = mpmath.mpf(self.visibility_first_derivative(start_time))
+        #visibility_first_end = mpmath.mpf(self.visibility_first_derivative(end_time))
 
 
-        # mpmath.mp.dps = 50
-        # start_time, end_time = time_interval
-        # time_step = mpmath.mpf(end_time - start_time)
-        # visibility_start = mpmath.mpf(self.visibility(start_time))
-        # visibility_end = mpmath.mpf(self.visibility(end_time))
-        # visibility_first_start = mpmath.mpf(self.visibility_first_derivative(start_time))
-        # visibility_first_end = mpmath.mpf(self.visibility_first_derivative(end_time))
 
+        #approximation_formula = lambda t:( 
+        #            ( ( (3*time_step*mpmath.power((t-start_time),2)) - (2*mpmath.power((t-start_time),3))                               )/(mpmath.power(time_step,3))*(visibility_end)         ) +
+        #            ( ( (mpmath.power(time_step,3)) - (3*time_step*mpmath.power((t-start_time),2)) + (2*mpmath.power((t-start_time),3)) )/(mpmath.power(time_step,3))*(visibility_start)       ) +
+        #            ( ( (mpmath.power((t-start_time),2))*(t-end_time)                                                                     )/(mpmath.power(time_step,2))*(visibility_first_end)   ) +
+        #            ( ( (t-start_time)*(mpmath.power((t-end_time),2))                                                                     )/(mpmath.power(time_step,2))*(visibility_first_start) )
+        #         )
+        #roots = mpmath.findroot(approximation_formula, start_time)
 
-
-        # approximation_formula = lambda t:( 
-        #             ( ( (3*time_step*mpmath.power((t-start_time),2)) - (2*mpmath.power((t-start_time),3))                               )/(mpmath.power(time_step,3))*(visibility_end)         ) +
-        #             ( ( (mpmath.power(time_step,3)) - (3*time_step*mpmath.power((t-start_time),2)) + (2*mpmath.power((t-start_time),3)) )/(mpmath.power(time_step,3))*(visibility_start)       ) +
-        #             ( ( (mpmath.power((t-start_time),2))*(t-end_time)                                                                     )/(mpmath.power(time_step,2))*(visibility_first_end)   ) +
-        #             ( ( (t-start_time)*(mpmath.power((t-end_time),2))                                                                     )/(mpmath.power(time_step,2))*(visibility_first_start) )
-        #          )
-        # roots = mpmath.findroot(approximation_formula, start_time)
-
-        # real_function = lambda t:(self.visibility(t))
-        # roots = mpmath.findroot(real_function, start_time, tol=0.007)      
+        #real_function = lambda t:(self.visibility(t))
+        #roots = mpmath.findroot(real_function, start_time, tol=0.007)      
 
         return roots
 
@@ -310,13 +336,12 @@ class VisibilityFinder(object):
         # The subinterval_end is set to start the initial loop iteration
         subinterval_end = start_time
         # Defines the length of the initial subinterval (h)
-        prev_time_step = 100
+        prev_time_step = 1000
 
         while subinterval_end < end_time:
             new_time_step_1 = prev_time_step
             # Hack loop since python does not support do-while
             iter_num = 0
-            """
             while True:
                 subinterval_end = subinterval_start + new_time_step_1
                 new_time_step_2 = self.bound_time_step_error((subinterval_start, subinterval_end),
@@ -330,27 +355,21 @@ class VisibilityFinder(object):
                 new_time_step_1 = new_time_step_2
                 iter_num += 1
 
-            """
             # At this stage for the current interpolation stage the time step is sufficiently small
             # to keep the error low
             new_time_step = new_time_step_1
             subinterval_end = subinterval_start + new_time_step
 
             roots = self.find_visibility((subinterval_start, subinterval_end))
-            # error_val = (self.visibility_fourth_derivative((subinterval_start,subinterval_end)) * 
-            #             (1/mpmath.mpf(24)) * (1/mpmath.mpf(16)) * mpmath.power(mpmath.mpf(prev_time_step),4))
+            error_val = (self.visibility_fourth_derivative((subinterval_start,subinterval_end)) * 
+                         (1/mpmath.mpf(24)) * (1/mpmath.mpf(16)) * mpmath.power(mpmath.mpf(prev_time_step),4))
 
-            # print ("error value :")
-            # print (error_val)
-            # # print(roots[np.isreal(roots)])
-            # print(roots)
-            # # for root in roots[np.isreal(roots)]:
-            # for root in roots:
-            # if roots <= subinterval_end and roots >= subinterval_start :
-            #         print("ROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOT:")
-            # print(subinterval_end)
-            # if roots:
-                # import pdb; pdb.set_trace()
+            print ("error value :")
+            print (error_val)
+            import pdb; pdb.set_trace()
+            for root in roots[np.isreal(roots)]:
+                if roots <= subinterval_end and roots >= subinterval_start :
+                    print("ROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOT:")
             print("=============================================================")
             # Set the start time and time step for the next interval
             subinterval_start = subinterval_end
@@ -358,6 +377,8 @@ class VisibilityFinder(object):
 
 
 
-        plt.plot(self.times,self.real_values,"r--",self.times, self.derivatives, "g--", self.times, self.zeors, "b--")#, self.aprox_times,self.aprox_values,"bs")
+        # plt.plot(self.times,self.real_values,"r--",self.times, self.derivatives, "g--", self.times, self.zeors, "b--", self.magnitudes_time, self.magnitudes, "k--", self.aprox_times,self.aprox_values,"bs")
+        plt.plot(self.times,self.real_values,"r--", self.times, self.zeors, "k--", self.aprox_times,self.aprox_values,"bs",self.times, self.derivatives, "g--")#, self.aprox_times, self.aprox_values2, "gs")
+        # plt.plot(self.times,self.real_values,"r--", self.times, self.zeors, "k--", self.times,self.real_derivatives,"b--",self.times, self.derivatives, "g--")
         plt.show()
         return []

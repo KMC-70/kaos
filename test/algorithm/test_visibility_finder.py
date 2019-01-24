@@ -60,10 +60,10 @@ class TestVisibilityFinder(KaosTestCase):
     """
     def test_vis(self):
         parse_ephemeris_file("ephemeris/Radarsat2_J2000.e")
-        x = VisibilityFinder(1, (49.07, -123.113), (1514764800,1514775600))
+        x = VisibilityFinder(1, (49.07, -123.113), (1514764802,1514775600))
+        import pdb; pdb.set_trace()
         x.determine_visibility()
         # x = VisibilityFinder(1, (49.07, -123.113), (1514768280,1514775600))
         # y = x.find_approx_coeffs(1514764800,1514764801)
-        # import pdb; pdb.set_trace()
 
 
