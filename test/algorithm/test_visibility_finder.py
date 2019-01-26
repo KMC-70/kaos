@@ -6,6 +6,7 @@ from kaos.models.parser import *
 import numpy as np
 import unittest
 from mock import patch
+from ddt import ddt,data
 from .. import KaosTestCase
 from kaos.algorithm.interpolator import Interpolator
 import re
@@ -14,6 +15,7 @@ from collections import namedtuple
 
 AccessTestInfo = namedtuple('AccessTestInfo', 'sat_name, target, accesses')
 
+@ddt
 class TestVisibilityFinder(KaosTestCase):
     """Test the visibility finder using specialized test files. These files are generatef from STK
     and modified to include all relavent data"""
@@ -96,18 +98,21 @@ class TestVisibilityFinder(KaosTestCase):
         self.assertAlmostEqual(finder.visibility_first_derivative(946684800), visibility_prime)
     """
 
+    #@data(('test/algorithm/vancouver.test',(1514764802,1514822400),60))
+    @data(('test/algorithm/vancouver.test', (1514764802,1514772000), 60))
+    def test_visibility(self, test_data):
+        access_file, interval, max_error = test_data
 
-    """
-    def test_vis(self):
-        access_info = self.parse_access_file('test/algorithm/vancouver.test')
-        x = VisibilityFinder(1, (49.07, -123.113), (1514764802,1515279600))
-        x.determine_visibility()
-        # x = VisibilityFinder(1, (49.07, -123.113), (1514768280,1514775600))
-        # y = x.find_approx_coeffs(1514764800,1514764801)
-    """
-    def test_vis(self):
-        access_info = self.parse_access_file('test/algorithm/vancouver.test')
-        x = VisibilityFinder(1, access_info.target, (1514764802,1514937601))
-        x.determine_visibility()
-        # x = VisibilityFinder(1, (49.07, -123.113), (1514768280,1514775600))
-        # y = x.find_approx_coeffs(1514764800,1514764801)
+        access_info = self.parse_access_file(access_file)
+        finder = VisibilityFinder(1, access_info.target, interval)
+        access_times = finder.determine_visibility()
+
+        def check_access(predicted_time):
+            accesses = filter( lambda time: abs(time[0] - predicted_time[0]) < max_error and
+                                            abs(time[1] - predicted_time[1]) < max_error,
+                               access_info.accesses)
+            return accesses is True
+
+        for access in access_times:
+            if check_access(access):
+                raise Exception('Wrong access: {}'.format(access))

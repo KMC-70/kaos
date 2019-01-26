@@ -1,13 +1,12 @@
 """This module contains all functions required to perform the self adapting Hermite computations."""
 
 from __future__ import division
-import numpy as np
-import mpmath
-import mpmath as mp
 
 from .interpolator import Interpolator
 from .coord_conversion import lla_to_eci
-import matplotlib.pyplot as plt
+
+import numpy as np
+import mpmath as mp
 
 class VisibilityFinder(object):
 
@@ -171,11 +170,11 @@ class VisibilityFinder(object):
         Note:
             The coefficients do not take into account the visibility angle theta.
         """
-        time_step = mpmath.mpf(end_time - start_time)
-        visibility_start = mpmath.mpf(self.visibility(start_time))
-        visibility_end = mpmath.mpf(self.visibility(end_time))
-        visibility_first_start = mpmath.mpf(self.visibility_first_derivative(start_time))
-        visibility_first_end = mpmath.mpf(self.visibility_first_derivative(end_time))
+        time_step = mp.mpf(end_time - start_time)
+        visibility_start = mp.mpf(self.visibility(start_time))
+        visibility_end = mp.mpf(self.visibility(end_time))
+        visibility_first_start = mp.mpf(self.visibility_first_derivative(start_time))
+        visibility_first_end = mp.mpf(self.visibility_first_derivative(end_time))
 
         const = (((-2 * (start_time ** 3) * visibility_start) / (time_step ** 3)) +
                  ((2 * (start_time ** 3) * visibility_end) / (time_step ** 3)) +
@@ -223,12 +222,12 @@ class VisibilityFinder(object):
 
         """
         # Calculate angle of visibility theta.
-        roots = mpmath.polyroots(self.find_approx_coeffs(*time_interval), maxsteps=2000,
-                                 extraprec=110)
+        roots = mp.polyroots(self.find_approx_coeffs(*time_interval), maxsteps=2000,
+                             extraprec=110)
 
         return roots
 
-    def determine_visibility(self, error=0.1, tolerance_ratio=0.1, max_iter=1000000):
+    def determine_visibility(self, error=0.1, tolerance_ratio=0.1, max_iter=100):
         """Using the self adapting interpolation algorithm described in the cited paper, this
         function returns the subintervals for which the satellites have visibility.
 
@@ -290,6 +289,7 @@ class VisibilityFinder(object):
 
                 new_time_step_1 = new_time_step_2
                 iter_num += 1
+                print 'new step: {}'.format(new_time_step_1)
 
             # At this stage for the current interpolation stage the time step is sufficiently small
             # to keep the error low
@@ -303,10 +303,11 @@ class VisibilityFinder(object):
             for root in roots:
                 if access_start is None:
                     access_start = root
+                    print("Found root: {}".format(root))
                 else:
                     sat_accesses.append((access_start, root))
                     access_start = None
-                    import pdb; pdb.set_trace()
+            print "New Game!\n"
 
             # Set the start time and time step for the next interval
             subinterval_start = subinterval_end

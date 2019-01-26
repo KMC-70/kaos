@@ -64,7 +64,7 @@ class Satellite(SavableModel, DB.Model):
         Returns:
             A list of satellites that match the name.
         """
-        return Satellite.query.filter(name=name).all()
+        return Satellite.query.filter(platform_name=name).all()
 
 
 class ResponseHistory(SavableModel, DB.Model):
