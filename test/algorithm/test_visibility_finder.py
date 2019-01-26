@@ -8,9 +8,46 @@ import unittest
 from mock import patch
 from .. import KaosTestCase
 from kaos.algorithm.interpolator import Interpolator
+import re
+from kaos.utils.time_conversion import utc_to_unix
+from collections import namedtuple
+
+AccessTestInfo = namedtuple('AccessTestInfo', 'sat_name, target, accesses')
 
 class TestVisibilityFinder(KaosTestCase):
+    """Test the visibility finder using specialized test files. These files are generatef from STK
+    and modified to include all relavent data"""
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestVisibilityFinder, cls).setUpClass()
+        parse_ephemeris_file("ephemeris/Radarsat2_J2000.e")
+
+    @staticmethod
+    def parse_access_file(file_path):
+        """Reads an access file."""
+        with open(file_path) as f:
+            access_info_text = f.read()
+
+
+        section_regex = re.compile(r'={99}', re.MULTILINE)
+        access_info = section_regex.split(access_info_text)
+
+        # Parse the header
+        sat_name = re.search(r'Satellite Name: ([a-zA-Z0-9]+)', access_info[1]).groups()[0]
+        target = [float(point) for point in
+                  re.search(r'Target Point: (.*)', access_info[1]).groups()[0].split(',')]
+        # Parse the access times
+        accesses = []
+        raw_access_data = access_info[2].splitlines()
+        for access in raw_access_data[1:]:
+            access = access.split(',')
+            # Parse the start and end time
+            start_time = utc_to_unix(access[1].rstrip().lstrip(), '%d %b %Y %H:%M:%S.%f')
+            end_time = utc_to_unix(access[2].rstrip().lstrip(), '%d %b %Y %H:%M:%S.%f')
+            accesses.append((start_time, end_time))
+
+        return AccessTestInfo(sat_name, target, accesses)
     """
     @patch('kaos.algorithm.interpolator.Interpolator.interpolate', return_value=
     ((-6.9980497691646582e+06, -1.4019786400312854e+06, 7.0754554424135364e+05),
@@ -58,12 +95,19 @@ class TestVisibilityFinder(KaosTestCase):
         finder = VisibilityFinder(1,(49.07, -123.113), (946684800,0))
         self.assertAlmostEqual(finder.visibility_first_derivative(946684800), visibility_prime)
     """
+
+
+    """
     def test_vis(self):
-        parse_ephemeris_file("ephemeris/Radarsat2_J2000.e")
-        x = VisibilityFinder(1, (49.07, -123.113), (1514764802,1514775600))
-        import pdb; pdb.set_trace()
+        access_info = self.parse_access_file('test/algorithm/vancouver.test')
+        x = VisibilityFinder(1, (49.07, -123.113), (1514764802,1515279600))
         x.determine_visibility()
         # x = VisibilityFinder(1, (49.07, -123.113), (1514768280,1514775600))
         # y = x.find_approx_coeffs(1514764800,1514764801)
-
-
+    """
+    def test_vis(self):
+        access_info = self.parse_access_file('test/algorithm/vancouver.test')
+        x = VisibilityFinder(1, access_info.target, (1514764802,1514937601))
+        x.determine_visibility()
+        # x = VisibilityFinder(1, (49.07, -123.113), (1514768280,1514775600))
+        # y = x.find_approx_coeffs(1514764800,1514764801)
