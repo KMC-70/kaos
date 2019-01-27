@@ -69,8 +69,11 @@ class VisibilityFinder(object):
         sat_site_vel = np.subtract(sat_pos_vel[1], site_pos_vel[1])
 
         site_normal_pos = np.divide(site_pos_vel[0], mp.norm(site_pos_vel[0]))
-        site_normal_vel = np.divide(mp.fdot(site_pos_vel[1], site_pos_vel[0]),
-                                            mp.norm(site_pos_vel[0]))
+        site_normal_vel = ((site_pos_vel[1] / mp.norm(site_pos_vel[0])) -
+                            ((site_pos_vel[0]/ mp.power(mp.norm(site_pos_vel[0]),2)) *
+                             (mp.fdot(site_pos_vel[0],site_pos_vel[1])/
+                                mp.norm(site_pos_vel[0])))
+                          )
 
         first_term = mp.mpf(((1.0 / mp.norm(sat_site_pos)) *
                              (mp.fdot(sat_site_vel, site_normal_pos) +
