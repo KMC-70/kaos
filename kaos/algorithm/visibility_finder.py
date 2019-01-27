@@ -1,16 +1,17 @@
-"""This module contains all functions required to perform the self adapting Hermite computations."""
+"""This module contains all functions required to perform the visibility computations"""
 
-from __future__ import division
-
-from .interpolator import Interpolator
-from .coord_conversion import lla_to_eci
+from __future__ import division, print_function
 
 import numpy as np
 import mpmath as mp
 
-class VisibilityFinder(object):
+from .interpolator import Interpolator
+from .coord_conversion import lla_to_eci
 
-    """An adaptive visibility finder used to determine the visibility interval of a satellite."""
+class VisibilityFinder(object):
+    """An adaptive visibility finder used to determine the visibility interval of a point on earth
+    from a satellite.
+    """
 
     def __init__(self, satellite_id, site, interval):
         """Args:
@@ -24,7 +25,6 @@ class VisibilityFinder(object):
 
         self.sat_irp = Interpolator(satellite_id)
 
-
     def visibility(self, posix_time):
         """Calculate the visibility function of the satellite and the site at a given time.
 
@@ -33,7 +33,13 @@ class VisibilityFinder(object):
 
         Returns:
             The value of the visibility function evaluated at the provided time.
+
+        Note:
+            This function assumes the FOV of the sensors on the satellite are 180 degrees
         """
+
+        # Since most helper functions don't play well with mpmath floats we have to perform a lossy
+        # conversion.
         posix_time = float(posix_time)
         site_pos = np.array(lla_to_eci(self.site[0], self.site[1], 0, posix_time)[0]) * mp.mpf(1.0)
         site_normal_pos = site_pos/mp.norm(site_pos)
@@ -42,27 +48,29 @@ class VisibilityFinder(object):
 
         return mp.mpf(mp.fdot(sat_site, site_normal_pos) / mp.norm(sat_site))
 
-    def visibility_first_derivative(self, time):
+    def visibility_first_derivative(self, posix_time):
         """Calculate the derivative of the visibility function of the satellite and the site at a
         given time.
 
         Args:
-            time (float): The UNIX time to evaluate the derivative visibility function at.
+            posix_time (float): The UNIX time to evaluate the derivative visibility function at.
 
         Returns:
             The value of the visibility function evaluated at the provided time.
         """
 
-
-        # TODO Understand why the analytical version of the first dirivative is broken
         """
-        sat_pos_vel = self.sat_irp.interpolate(float(time))
-        site_pos_vel = lla_to_eci(self.site[0], self.site[1], 0, time)
+        # Since most helper functions don't play well with mpmath floats we have to perform a lossy
+        # conversion.
+        posix_time = float(posix_time)
+        sat_pos_vel = self.sat_irp.interpolate(posix_time)
+        site_pos_vel = lla_to_eci(self.site[0], self.site[1], 0, posix_time)
         sat_site_pos = np.subtract(sat_pos_vel[0], site_pos_vel[0])
         sat_site_vel = np.subtract(sat_pos_vel[1], site_pos_vel[1])
 
         site_normal_pos = np.divide(site_pos_vel[0], mp.norm(site_pos_vel[0]))
-        site_normal_vel = np.divide(site_pos_vel[1], mp.norm(site_pos_vel[1]))
+        site_normal_vel = np.divide(mp.fdot(site_pos_vel[1], site_pos_vel[0]),
+                                            mp.norm(site_pos_vel[0]))
 
         first_term = mp.mpf(((1.0 / mp.norm(sat_site_pos)) *
                              (mp.fdot(sat_site_vel, site_normal_pos) +
@@ -74,12 +82,12 @@ class VisibilityFinder(object):
 
         return  first_term - second_term
         """
+        return mp.diff(self.visibility, posix_time, h=1)
 
-        return mp.diff(self.visibility, float(time), h=1)
-
+    #pylint: disable=invalid-name
     def visibility_fourth_derivative_max(self, sub_interval):
-        """Calculate the fourth derivative of the visibility function of the satellite and the site
-        at a given time.
+        """Calculate the maximum of the fourth derivative of the visibility function of the
+        satellite through a given sub interval.
 
         Args:
             time (float): The time at which to evaluate the fourth derivative of the  visibility
@@ -130,46 +138,44 @@ class VisibilityFinder(object):
 
         a4 = a4_first_term - a4_second_term - a4_third_term
 
-        # Using the above co-efficients we can determine the approximation as per Eq 5 of the cited
-        # paper
         return max(abs((120 * a5 * start_time) + (24 * a4)), abs((120 * a5 * end_time) + (24 * a4)))
+        #pylint: enable=invalid-name
 
-    def bound_time_step_error(self, interval, error):
-        """Corrects the time step for the current sub interval as to mach error to the desired rate.
+    def bound_time_step_error(self, time_interval, error):
+        """Corrects the time step for the current sub interval to mach the desired error rate.
 
         Args:
-            interval (tuple): The two UNIX timestamps that bound the desired sub-interval
-            error (float): The desired approximate error in results
+            time_interval (tuple): The two UNIX timestamps that bound the desired sub-interval
+            error (float): The desired approximate error in results. This error is the max deviation
+                           presented as the difference between the approximated and real value of
+                           the visibility function
 
         Returns:
             The new time step to use in order to mach the approximate error.
 
-        Note:
         """
         # First we compute the maximum of the fourth derivative as per eq 8 in the referenced
         # paper
-        visibility_4_prime_max = self.visibility_fourth_derivative_max(interval)
+        visibility_4_prime_max = self.visibility_fourth_derivative_max(time_interval)
 
         # Then we use the error and eq 9 to calculate the new time_step.
         return mp.power((16.0 * mp.mpf(error)) / (visibility_4_prime_max / 24), 0.25)
 
-    def find_approx_coeffs(self, start_time, end_time):
+    def find_approx_coeffs(self, time_interval):
         """Calculates the coefficients of the Hermite approximation to the visibility function for a
         given interval.
 
         Args:
-            start_timer (float): The UNIX time-stamp corresponding to the beginning of the period to
-                                 be interpolated
-            end_timer (float): The UNIX time-stamp corresponding to the end of the period to be
-                               interpolated
+            interval (tuple): The two UNIX timestamps that bound the desired interval
 
         Returns:
             An array containing the coefficients for the Hermite approximation of the
             visibility function
 
         Note:
-            The coefficients do not take into account the visibility angle theta.
+            This function assumes the FOV of the sensors on the satellite are 180 degrees
         """
+        start_time, end_time = time_interval
         time_step = mp.mpf(end_time - start_time)
         visibility_start = mp.mpf(self.visibility(start_time))
         visibility_end = mp.mpf(self.visibility(end_time))
@@ -222,12 +228,12 @@ class VisibilityFinder(object):
 
         """
         # Calculate angle of visibility theta.
-        roots = mp.polyroots(self.find_approx_coeffs(*time_interval), maxsteps=2000,
+        roots = mp.polyroots(self.find_approx_coeffs(time_interval), maxsteps=2000,
                              extraprec=110)
 
         return roots
 
-    def determine_visibility(self, error=0.1, tolerance_ratio=0.1, max_iter=100):
+    def determine_visibility(self, error=0.1, tolerance_ratio=0.1, max_iter=1000):
         """Using the self adapting interpolation algorithm described in the cited paper, this
         function returns the subintervals for which the satellites have visibility.
 
@@ -243,8 +249,10 @@ class VisibilityFinder(object):
             * The tolerance ratio is exceeded
 
         Args:
-            error (float, optional): Tolerance value of approximated error. Defaults to 0.01
-            tolerance_ratio (float, optional): The tolerance ratio of the interval time step.
+            error (float): The desired approximate error in results. This error is the max deviation
+                           presented as the difference between the approximated and real value of
+                           the visibility function. Defaults to 0.1
+            tolerance_ratio (float, optional): The tolerance ratio of the desired error.
                                                Defaults to 0.1
             max_iter (int, optional): The maximum number of iterations per sub interval. Defaults to
                                       1000
@@ -255,6 +263,7 @@ class VisibilityFinder(object):
         Note:
             This function assumes a viewing angle of 180 degrees
         """
+        #pylint: disable=too-many-locals
         start_time, end_time = self.interval
 
         # Initialize the algorithm variables
@@ -264,7 +273,7 @@ class VisibilityFinder(object):
         # Defines the length of the initial subinterval (h)
         prev_time_step = 1000
 
-        # Check if we began scanning in the begining of an access interval
+        # Check if we began scanning in the beginning of an access interval
         sat_accesses = []
         if self.visibility(start_time) > 0:
             access_start = start_time
@@ -289,7 +298,7 @@ class VisibilityFinder(object):
 
                 new_time_step_1 = new_time_step_2
                 iter_num += 1
-                print 'new step: {}'.format(new_time_step_1)
+                print('new step: {}'.format(new_time_step_1))
 
             # At this stage for the current interpolation stage the time step is sufficiently small
             # to keep the error low
@@ -307,7 +316,7 @@ class VisibilityFinder(object):
                 else:
                     sat_accesses.append((access_start, root))
                     access_start = None
-            print "New Game!\n"
+            print("New Game!\n")
 
             # Set the start time and time step for the next interval
             subinterval_start = subinterval_end

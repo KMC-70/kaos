@@ -50,56 +50,8 @@ class TestVisibilityFinder(KaosTestCase):
             accesses.append((start_time, end_time))
 
         return AccessTestInfo(sat_name, target, accesses)
-    """
-    @patch('kaos.algorithm.interpolator.Interpolator.interpolate', return_value=
-    ((-6.9980497691646582e+06, -1.4019786400312854e+06, 7.0754554424135364e+05),
-     (-9.4202033738527109e+02, 9.5296010534027573e+02, -7.3355694593015414e+03)))
-    def test_visibility(self, interpolate):
-        # testing point r_site (the coordinates(Lat, Longi, r_earth, epoch_time_J2000) of vancouver
-        # generated from STK)
-        r_site_spherical = (49.07, -123.113, 0, 946684800)
-        # convert to eci since r_sat and v_sat are in eci(J2000) (Assume lla_to_eci works correctly)
-        r_site = lla_to_eci(*r_site_spherical)[0]
-        # testing point r_sat and v_sat(the first line in Radarsat2_J2000.e under ephemeris)
-        r_sat = (-6.9980497691646582e+06, -1.4019786400312854e+06, 7.0754554424135364e+05)
-        delta_r = np.subtract(r_sat, r_site)
-        r_site_0 = r_site / np.linalg.norm(delta_r)
 
-        visibility = np.dot(delta_r, r_site_0) / np.linalg.norm(r_site)
-        finder = VisibilityFinder(1, (49.07, -123.113), (946684800, 0))
-        self.assertAlmostEqual(finder.visibility(946684800), visibility)
-
-    @patch('kaos.algorithm.interpolator.Interpolator.interpolate', return_value=
-    ((-6.9980497691646582e+06, -1.4019786400312854e+06, 7.0754554424135364e+05),
-     (-9.4202033738527109e+02, 9.5296010534027573e+02, -7.3355694593015414e+03)))
-    def test_visibility_first_derivative(self, interpolate):
-        # testing point r_site (the coordinates(Lat, Longi, r_earth, epoch_time_J2000) of vancouver
-        # generated from STK)
-        r_site_spherical = (49.07, -123.113, 0, 946684800)
-        # convert to eci since r_sat and v_sat are in eci(J2000) (Assume lla_to_eci works correctly)
-        r_site, v_site = lla_to_eci(*r_site_spherical)
-
-        # testing point r_sat and v_sat(the first line in Radarsat2_J2000.e under ephemeris)
-        r_sat = (-6.9980497691646582e+06, -1.4019786400312854e+06, 7.0754554424135364e+05)
-        v_sat = (-9.4202033738527109e+02, 9.5296010534027573e+02, -7.3355694593015414e+03)
-
-        delta_r = np.subtract(r_sat, r_site)
-        r_site_0 = r_site/np.linalg.norm(r_site)
-        delta_r_prime = np.subtract(v_sat, v_site)
-
-        #not sure about r_site_0_prime
-        r_site_0_prime = v_site/np.linalg.norm(v_site)
-        visibility_prime = (1/np.linalg.norm(delta_r)) * (np.dot(delta_r_prime, r_site_0) +
-                                                          np.dot(delta_r, r_site_0_prime))\
-                           -(1/(np.linalg.norm(delta_r))**3) * \
-                           np.dot(np.dot(delta_r, delta_r_prime)*delta_r,r_site_0)
-
-        finder = VisibilityFinder(1,(49.07, -123.113), (946684800,0))
-        self.assertAlmostEqual(finder.visibility_first_derivative(946684800), visibility_prime)
-    """
-
-    #@data(('test/algorithm/vancouver.test',(1514764802,1514822400),60))
-    @data(('test/algorithm/vancouver.test', (1514764802,1514772000), 60))
+    @data(('test/algorithm/vancouver.test', (1514764802, 1514772000), 60))
     def test_visibility(self, test_data):
         access_file, interval, max_error = test_data
 
@@ -108,8 +60,8 @@ class TestVisibilityFinder(KaosTestCase):
         access_times = finder.determine_visibility()
 
         def check_access(predicted_time):
-            accesses = filter( lambda time: abs(time[0] - predicted_time[0]) < max_error and
-                                            abs(time[1] - predicted_time[1]) < max_error,
+            accesses = filter(lambda time: abs(time[0] - predicted_time[0]) < max_error and
+                                           abs(time[1] - predicted_time[1]) < max_error,
                                access_info.accesses)
             return accesses is True
 
