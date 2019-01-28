@@ -3,6 +3,8 @@
 from __future__ import division, print_function
 
 from flask import Flask, jsonify
+import logging
+from time import gmtime, strftime
 from mpmath import mp
 
 from kaos.api.errors import APIError
@@ -11,12 +13,24 @@ from kaos.api.errors import APIError
 def create_app(config="settings.cfg"):
     """Create and setup the KAOS app."""
 
-    # Setup libraries
-    mp.dps = 100
 
     # App configuration
     app = Flask(__name__)
     app.config.from_pyfile(config)
+
+    # Setup libraries
+    mp.dps = app.config['CALCULATION_PRECISION']
+
+    numeric_level = getattr(logging, app.config['LOGGING_LEVEL'].upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: {}'.format(app.config['LOGGING_LEVEL'].upper()))
+
+    logging.basicConfig(filename=strftime(app.config['LOGGING_FILE_NAME'], gmtime()),
+                        format='%(asctime)s %(levelname)s %(module)s %(message)s',
+                        level=numeric_level)
+
+    # TODO Add stderr handler
+    logging.info('======= KAOS START =======')
 
     # Database setup
     from kaos.models import DB
