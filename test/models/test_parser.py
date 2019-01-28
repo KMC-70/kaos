@@ -52,7 +52,7 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
 
         self.assertTrue(len(orbit_segment.query.all()) == 14) # taken from ephem file
 
-        parse_ephemeris_file("ephemeris/Radarsat2_J2000.e")
+        parse_ephemeris_file("ephemeris/Radarsat2.e")
         orbit = OrbitRecord()
 
         # test that both files are included properly

@@ -1,35 +1,46 @@
 """Testing the visibility_finder."""
-from kaos.algorithm.coord_conversion import lla_to_eci
-from kaos.algorithm.visibility_finder import VisibilityFinder
-from kaos.models import DB, Satellite, ResponseHistory, OrbitSegment, OrbitRecord
-from kaos.models.parser import *
-import numpy as np
-import unittest
-from mock import patch
-from ddt import ddt,data
-from .. import KaosTestCase
-from kaos.algorithm.interpolator import Interpolator
-import re
-from kaos.utils.time_conversion import utc_to_unix
 from collections import namedtuple
+import re
+
+from ddt import ddt, data
+
+from kaos.algorithm.visibility_finder import VisibilityFinder
+from kaos.models import Satellite
+from kaos.models.parser import parse_ephemeris_file
+from kaos.utils.time_conversion import utc_to_unix
+
+from .. import KaosTestCase
 
 AccessTestInfo = namedtuple('AccessTestInfo', 'sat_name, target, accesses')
 
 @ddt
 class TestVisibilityFinder(KaosTestCase):
-    """Test the visibility finder using specialized test files. These files are generatef from STK
-    and modified to include all relavent data"""
+    """Test the visibility finder using specialized test files. These files are generated from STK
+    and modified to include all relevant data about actual expected access times.
+    """
 
     @classmethod
     def setUpClass(cls):
         super(TestVisibilityFinder, cls).setUpClass()
-        parse_ephemeris_file("ephemeris/Radarsat2_J2000.e")
+        parse_ephemeris_file("ephemeris/Radarsat2.e")
 
+    #pylint: disable=line-too-long
     @staticmethod
     def parse_access_file(file_path):
-        """Reads an access file."""
-        with open(file_path) as f:
-            access_info_text = f.read()
+        """Reads a KAOS access test file, these files follow the following format:
+
+            ====================================================================================================
+            Satellite Name: <Sat Name>
+            Target Point: <lon>, <lat>
+            ====================================================================================================
+            record number, access start, access_end, access_duration
+            ....
+
+        Args:
+            file_path (string): The path of the KAOS access test file.
+        """
+        with open(file_path) as access_file:
+            access_info_text = access_file.read()
 
 
         section_regex = re.compile(r'={99}', re.MULTILINE)
@@ -50,20 +61,34 @@ class TestVisibilityFinder(KaosTestCase):
             accesses.append((start_time, end_time))
 
         return AccessTestInfo(sat_name, target, accesses)
+    #pylint: enable=line-too-long
 
-    @data(('test/algorithm/vancouver.test', (1514764802, 1514772000), 60))
+    @data(('test/algorithm/vancouver.test', (1514764802, 1514772000), 60),
+          ('test/algorithm/vancouver.test', (1515160800, 1515164400), 60),
+          ('test/algorithm/vancouver.test', (1515283201, 1515369540), 60))
     def test_visibility(self, test_data):
+        """Tests that the visibility finder produces the same results as the access file.
+
+        Args:
+            test_data (tuple): A three tuple containing the:
+                                1 - The path of KAOS access test file
+                                2 - A tuple of the desired test duration
+                                3 - The maximum tolerated deviation in seconds
+        """
         access_file, interval, max_error = test_data
 
         access_info = self.parse_access_file(access_file)
-        finder = VisibilityFinder(1, access_info.target, interval)
+        finder = VisibilityFinder(Satellite.get_by_name(access_info.sat_name)[0].platform_id,
+                                  access_info.target, interval)
         access_times = finder.determine_visibility()
 
+        #pylint: disable=deprecated-lambda,missing-docstring
         def check_access(predicted_time):
             accesses = filter(lambda time: abs(time[0] - predicted_time[0]) < max_error and
-                                           abs(time[1] - predicted_time[1]) < max_error,
-                               access_info.accesses)
+                              abs(time[1] - predicted_time[1]) < max_error,
+                              access_info.accesses)
             return accesses is True
+        #pylint: enable=deprecated-lambda,missing-docstring
 
         for access in access_times:
             if check_access(access):

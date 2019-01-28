@@ -236,7 +236,7 @@ class VisibilityFinder(object):
 
         return roots
 
-    def determine_visibility(self, error=0.1, tolerance_ratio=0.1, max_iter=1000):
+    def determine_visibility(self, error=0.1, tolerance_ratio=0.1, max_iter=100):
         """Using the self adapting interpolation algorithm described in the cited paper, this
         function returns the subintervals for which the satellites have visibility.
 
@@ -258,7 +258,7 @@ class VisibilityFinder(object):
             tolerance_ratio (float, optional): The tolerance ratio of the desired error.
                                                Defaults to 0.1
             max_iter (int, optional): The maximum number of iterations per sub interval. Defaults to
-                                      1000
+                                      100
 
         Returns:
             The subintervals over which the site is visible.
