@@ -59,33 +59,28 @@ class VisibilityFinder(object):
             The value of the visibility function evaluated at the provided time.
         """
 
-        """
         # Since most helper functions don't play well with mpmath floats we have to perform a lossy
         # conversion.
         posix_time = float(posix_time)
-        sat_pos_vel = self.sat_irp.interpolate(posix_time)
-        site_pos_vel = lla_to_eci(self.site[0], self.site[1], 0, posix_time)
-        sat_site_pos = np.subtract(sat_pos_vel[0], site_pos_vel[0])
-        sat_site_vel = np.subtract(sat_pos_vel[1], site_pos_vel[1])
+        sat_pos_vel = np.array(self.sat_irp.interpolate(posix_time)) * mp.mpf(1.0)
+        site_pos_vel = np.array(lla_to_eci(self.site[0], self.site[1], 0, posix_time)) * mp.mpf(1.0)
 
-        site_normal_pos = np.divide(site_pos_vel[0], mp.norm(site_pos_vel[0]))
+        pos_diff = np.subtract(sat_pos_vel[0], site_pos_vel[0])
+        vel_diff = np.subtract(sat_pos_vel[1], site_pos_vel[1])
+
+        site_normal_pos = site_pos_vel[0] / mp.norm(site_pos_vel[0])
         site_normal_vel = ((site_pos_vel[1] / mp.norm(site_pos_vel[0])) -
-                            ((site_pos_vel[0]/ mp.power(mp.norm(site_pos_vel[0]),2)) *
-                             (mp.fdot(site_pos_vel[0],site_pos_vel[1])/
-                                mp.norm(site_pos_vel[0])))
-                          )
+                           ((site_pos_vel[0] / mp.power(mp.norm(site_pos_vel[0]), 2)) *
+                            (mp.fdot(site_pos_vel[0], site_pos_vel[1]) / mp.norm(site_pos_vel[0]))))
 
-        first_term = mp.mpf(((1.0 / mp.norm(sat_site_pos)) *
-                             (mp.fdot(sat_site_vel, site_normal_pos) +
-                              mp.fdot(sat_site_pos, site_normal_vel))))
+        first_term = mp.mpf(((1.0 / mp.norm(pos_diff)) *
+                             (mp.fdot(vel_diff, site_normal_pos) +
+                              mp.fdot(pos_diff, site_normal_vel))))
 
-        second_term = mp.mpf(((1.0 / (mp.norm(sat_site_pos) ** 3.0)) *
-                              mp.fdot(sat_site_pos, sat_site_vel) *
-                              mp.fdot(sat_site_pos, site_normal_pos)))
+        second_term = mp.mpf(((1.0 / mp.power((mp.norm(pos_diff)), 3)) *
+                              mp.fdot(pos_diff, vel_diff) * mp.fdot(pos_diff, site_normal_pos)))
 
         return  first_term - second_term
-        """
-        return mp.diff(self.visibility, posix_time, h=1)
 
     #pylint: disable=invalid-name
     def visibility_fourth_derivative_max(self, sub_interval):
