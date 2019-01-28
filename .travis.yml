@@ -16,7 +16,7 @@ install:
     - ./scripts/psql_setup_linux
 
 script:
-    - pytest test
+    - travis_wait 20 pytest test
 
 notifications:
     email:
