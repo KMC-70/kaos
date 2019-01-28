@@ -38,6 +38,9 @@ class TestVisibilityFinder(KaosTestCase):
 
         Args:
             file_path (string): The path of the KAOS access test file.
+
+        Returns:
+            An AccessTestInfo tule
         """
         with open(file_path) as access_file:
             access_info_text = access_file.read()
