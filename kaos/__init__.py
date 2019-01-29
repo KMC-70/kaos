@@ -47,4 +47,3 @@ def create_app(config="settings.cfg"):
     # pylint: enable=unused-variable,missing-docstring
 
     return app
-

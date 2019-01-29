@@ -8,6 +8,7 @@ from .validators import ValidateString
 
 DB = SQLAlchemy()
 
+
 class SavableModel:
     """SQL Alchemy model mixin used to enable quick saving."""
 

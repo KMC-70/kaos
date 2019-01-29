@@ -27,6 +27,7 @@ def utc_to_unix(time_string, string_format='%Y%m%dT%H:%M:%S.%f'):
     date_time = datetime.datetime.strptime(time_string, string_format)
     return calendar.timegm(date_time.utctimetuple())
 
+
 def jdate_to_utc(jdate):
     """Takes a date in Julian format and converts it to a UTC formatted time stamp.
 
@@ -49,6 +50,7 @@ def jdate_to_utc(jdate):
     iso_date += 'T' + str(jdate_timestamp.iso.split()[1])
     return iso_date
 
+
 def jdate_to_unix(jdate):
     """ Takes a date in Julian format and converts it to a UNIX
     time stamp.
@@ -61,5 +63,4 @@ def jdate_to_unix(jdate):
 
     # remove the millisecond precision
     return utc_to_unix(utc_date[:-1])
-
 

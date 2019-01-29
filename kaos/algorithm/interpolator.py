@@ -4,16 +4,17 @@ import numpy as np
 
 from kaos.models import OrbitSegment, OrbitRecord
 
+
 class Interpolator:
-    """Utility class to interpolate satellite position and velocity at arbitrary times, 
+    """Utility class to interpolate satellite position and velocity at arbitrary times,
     based on existing datapoints.
     """
     def __init__(self, platform_id):
         self.platform_id = platform_id
-        
+
     @staticmethod
     def linear_interp(platform_id, timestamp):
-        """Use linear interpolation to estimate the position and velocity of a satellite 
+        """Use linear interpolation to estimate the position and velocity of a satellite
         at a given time.
 
         Args:
@@ -37,7 +38,8 @@ class Interpolator:
         if not orbit_records or len(orbit_records) < 2:
             raise ValueError("Not enough records to perform interpolation: {}, {}".format(
                 platform_id, timestamp))
-        
+
+        # pylint: disable=invalid-name
         xp = np.array([rec.time for rec in orbit_records])
         pos = np.array([np.array(rec.position) for rec in orbit_records])
         vel = np.array([np.array(rec.velocity) for rec in orbit_records])

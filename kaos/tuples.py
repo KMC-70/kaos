@@ -5,12 +5,26 @@ Author: Team KMC-70
 
 from collections import namedtuple
 
-"""Representation a 3D cartesian vector"""
-Vector3D = namedtuple("Vector3D", "x, y, z")
 
-"""Tuple that represents a time interval"""
-TimeInterval = namedtuple("TimeInterval", "start, end")
+class Vector3D(namedtuple('Vector3D', 'x, y, z')):
+    """Representation of a 3D cartesian vector."""
+    __slots__ = ()
 
-"""Orbit information for a given point in time"""
-OrbitPoint = namedtuple("OrbitPoint", "time, pos, vel")
+    def __str__(self):
+        return 'Vector3D: x={}, y={}, z={}'.format(self.x, self.y, self.z)
 
+
+class TimeInterval(namedtuple('TimeInterval', 'start, end')):
+    """Tuple that represents a time interval."""
+    __slots__ = ()
+
+    def __str__(self):
+        return 'TimeInterval: start={}, end={}'.format(self.start, self.end)
+
+
+class OrbitPoint(namedtuple('OrbitPoint', 'time, pos, vel')):
+    """Orbit information for a given point in time."""
+    __slots__ = ()
+
+    def __str__(self):
+        return 'OrbitPoint: time={}, pos={}, vel={}'.format(self.time, self.pos, self.vel)
