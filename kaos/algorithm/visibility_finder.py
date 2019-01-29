@@ -1,12 +1,13 @@
 """This module contains all functions required to perform the visibility computations"""
 
-from __future__ import division, print_function
+from __future__ import division
 
 import numpy as np
 import mpmath as mp
 
 from .interpolator import Interpolator
 from .coord_conversion import lla_to_eci
+from ..errors import VisibilityFinderError
 
 class VisibilityFinder(object):
     """An adaptive visibility finder used to determine the visibility interval of a point on earth
@@ -296,7 +297,6 @@ class VisibilityFinder(object):
 
                 new_time_step_1 = new_time_step_2
                 iter_num += 1
-                print('new step: {}'.format(new_time_step_1))
 
             # At this stage for the current interpolation stage the time step is sufficiently small
             # to keep the error low
@@ -310,14 +310,23 @@ class VisibilityFinder(object):
             for root in roots:
                 if access_start is None:
                     access_start = root
-                    print("Found root: {}".format(root))
                 else:
                     sat_accesses.append((access_start, root))
                     access_start = None
-            print("New Game!\n")
 
             # Set the start time and time step for the next interval
             subinterval_start = subinterval_end
             prev_time_step = new_time_step
 
+
+        # If the loop terminates and an access end was still not found that means that point should
+        # still be visible at the end of the period.
+        # NOTE: subinterval_end would also work here but is difficult to test.
+        if access_start is not None:
+            if self.visibility(end_time) <= 0:
+                raise VisibilityFinderError("Visibility interval started at {} "
+                                            "but did not end at {}".format(access_start, end_time))
+            sat_accesses.append((access_start, end_time))
+
         return sat_accesses
+

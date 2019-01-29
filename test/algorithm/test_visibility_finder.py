@@ -67,9 +67,11 @@ class TestVisibilityFinder(KaosTestCase):
     #pylint: enable=line-too-long
 
     @data(('test/algorithm/vancouver.test', (1514764802, 1514772000), 60),
-          ('test/algorithm/vancouver.test', (1515160800, 1515164400), 60),
-          ('test/algorithm/vancouver.test', (1515283201, 1515369540), 60))
-    def test_visibility(self, test_data):
+          ('test/algorithm/vancouver.test', (1514768543, 1514772000), 60),
+          ('test/algorithm/vancouver.test', (1514768340, 1514768400), 60),
+          ('test/algorithm/vancouver.test', (1514768543, 1514769143), 60),
+          ('test/algorithm/vancouver.test', (1515160800, 1515164400), 60))
+    def test_full_visibility(self, test_data):
         """Tests that the visibility finder produces the same results as the access file.
 
         Args:
@@ -77,6 +79,9 @@ class TestVisibilityFinder(KaosTestCase):
                                 1 - The path of KAOS access test file
                                 2 - A tuple of the desired test duration
                                 3 - The maximum tolerated deviation in seconds
+        Note:
+            Ranges provided must not start or end at an access boundary. This is a result of the
+            strict checking method provided.
         """
         access_file, interval, max_error = test_data
 
@@ -85,14 +90,30 @@ class TestVisibilityFinder(KaosTestCase):
                                   access_info.target, interval)
         access_times = finder.determine_visibility()
 
-        #pylint: disable=deprecated-lambda,missing-docstring
-        def check_access(predicted_time):
-            accesses = filter(lambda time: abs(time[0] - predicted_time[0]) < max_error and
-                              abs(time[1] - predicted_time[1]) < max_error,
-                              access_info.accesses)
-            return accesses is True
-        #pylint: enable=deprecated-lambda,missing-docstring
+        for predicted_access in access_times:
+            found = False
+            for actual_access in access_info.accesses:
+                if (interval[0] > actual_access[0]) and (interval[1] < actual_access[1]):
+                    if ((abs(interval[0] - predicted_access[0]) < max_error) and
+                            (abs(interval[1] - predicted_access[1]) < max_error)):
+                        found = True
+                        break
+                if interval[0] > actual_access[0]:
+                    if ((abs(interval[0] - predicted_access[0]) < max_error) and
+                            (abs(actual_access[1] - predicted_access[1]) < max_error)):
+                        found = True
+                        break
+                elif interval[1] < actual_access[1]:
+                    if ((abs(actual_access[0] - predicted_access[0]) < max_error) and
+                            (abs(interval[1] - predicted_access[1]) < max_error)):
+                        found = True
+                        break
 
-        for access in access_times:
-            if check_access(access):
-                raise Exception('Wrong access: {}'.format(access))
+                if ((abs(actual_access[0] - predicted_access[0]) < max_error) and
+                        (abs(actual_access[1] - predicted_access[1]) < max_error)):
+                    found = True
+                    break
+
+            if not found:
+                raise Exception('Wrong access: {}'.format(predicted_access))
+
