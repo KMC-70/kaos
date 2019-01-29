@@ -1,4 +1,5 @@
 """This module contains all functions required to perform the visibility computations"""
+# pylint: disable=too-many-locals
 
 from __future__ import division
 
@@ -8,6 +9,7 @@ import mpmath as mp
 from .interpolator import Interpolator
 from .coord_conversion import lla_to_eci
 from ..errors import VisibilityFinderError
+
 
 class VisibilityFinder(object):
     """An adaptive visibility finder used to determine the visibility interval of a point on earth
@@ -43,7 +45,7 @@ class VisibilityFinder(object):
         # conversion.
         posix_time = float(posix_time)
         site_pos = np.array(lla_to_eci(self.site[0], self.site[1], 0, posix_time)[0]) * mp.mpf(1.0)
-        site_normal_pos = site_pos/mp.norm(site_pos)
+        site_normal_pos = site_pos / mp.norm(site_pos)
         sat_pos = self.sat_irp.interpolate(posix_time)[0]
         sat_site = np.subtract(sat_pos, site_pos)
 
@@ -81,9 +83,9 @@ class VisibilityFinder(object):
         second_term = mp.mpf(((1.0 / mp.power((mp.norm(pos_diff)), 3)) *
                               mp.fdot(pos_diff, vel_diff) * mp.fdot(pos_diff, site_normal_pos)))
 
-        return  first_term - second_term
+        return first_term - second_term
 
-    #pylint: disable=invalid-name
+    # pylint: disable=invalid-name
     def visibility_fourth_derivative_max(self, sub_interval):
         """Calculate the maximum of the fourth derivative of the visibility function of the
         satellite through a given sub interval.
@@ -101,7 +103,6 @@ class VisibilityFinder(object):
             This function uses the approximation defined in the Rapid Satellite-to-Site Visibility
             paper.
         """
-        #pylint: disable=too-many-locals
         start_time, end_time = sub_interval
         interval_length = end_time - start_time
         mid_time = start_time + (interval_length / 2)
@@ -138,7 +139,7 @@ class VisibilityFinder(object):
         a4 = a4_first_term - a4_second_term - a4_third_term
 
         return max(abs((120 * a5 * start_time) + (24 * a4)), abs((120 * a5 * end_time) + (24 * a4)))
-        #pylint: enable=invalid-name
+        # pylint: enable=invalid-name
 
     def bound_time_step_error(self, time_interval, error):
         """Corrects the time step for the current sub interval to mach the desired error rate.
@@ -187,8 +188,7 @@ class VisibilityFinder(object):
                  ((-1 * 3 * (start_time ** 2) * visibility_start) / (time_step ** 2)) +
                  ((3 * (start_time ** 2) * visibility_end) / (time_step ** 2)) +
                  ((-1 * start_time * (end_time ** 2) * visibility_first_start) / (time_step ** 2)) +
-                 visibility_start
-                )
+                 visibility_start)
 
         t_coeffs = (((6 * (start_time ** 2) * visibility_start) / (time_step ** 3)) +
                     ((-1 * 6 * (start_time ** 2) * visibility_end) / (time_step ** 3)) +
@@ -197,8 +197,7 @@ class VisibilityFinder(object):
                     ((2 * start_time * end_time * visibility_first_end) / (time_step ** 2)) +
                     ((6 * start_time * visibility_start) / (time_step ** 2)) +
                     ((-1 * 6 * start_time * visibility_end) / (time_step ** 2)) +
-                    (((end_time ** 2) * visibility_first_start) / (time_step ** 2))
-                   )
+                    (((end_time ** 2) * visibility_first_start) / (time_step ** 2)))
 
         t_2_coeffs = (((-1 * 6 * start_time * visibility_start) / (time_step ** 3)) +
                       ((6 * start_time * visibility_end) / (time_step ** 3)) +
@@ -207,14 +206,13 @@ class VisibilityFinder(object):
                       ((-1 * 2 * end_time * visibility_first_start) / (time_step ** 2)) +
                       ((-1 * end_time * visibility_first_end) / (time_step ** 2)) +
                       ((-1 * 3 * visibility_start) / (time_step ** 2)) +
-                      ((3 * visibility_end) / (time_step ** 2))
-                     )
+                      ((3 * visibility_end) / (time_step ** 2)))
 
         t_3_coeffs = (((2 * visibility_start) / (time_step ** 3)) +
                       ((-1 * 2 * visibility_end) / (time_step ** 3)) +
                       ((visibility_first_start) / (time_step ** 2)) +
-                      ((visibility_first_end) / (time_step ** 2))
-                     )
+                      ((visibility_first_end) / (time_step ** 2)))
+
         return [t_3_coeffs, t_2_coeffs, t_coeffs, const]
 
     def find_visibility(self, time_interval):
@@ -262,7 +260,6 @@ class VisibilityFinder(object):
         Note:
             This function assumes a viewing angle of 180 degrees
         """
-        #pylint: disable=too-many-locals
         start_time, end_time = self.interval
 
         # Initialize the algorithm variables
@@ -318,7 +315,6 @@ class VisibilityFinder(object):
             subinterval_start = subinterval_end
             prev_time_step = new_time_step
 
-
         # If the loop terminates and an access end was still not found that means that point should
         # still be visible at the end of the period.
         # NOTE: subinterval_end would also work here but is difficult to test.
@@ -329,4 +325,3 @@ class VisibilityFinder(object):
             sat_accesses.append((access_start, end_time))
 
         return sat_accesses
-

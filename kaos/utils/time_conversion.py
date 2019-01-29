@@ -2,7 +2,9 @@
 
 import datetime
 import calendar
+
 from astropy.time import Time
+
 
 def utc_to_unix(time_string, string_format='%Y%m%dT%H:%M:%S.%f'):
     """Takes a string input of a specified date time format and converts it to a UNIX time stamp.
@@ -63,4 +65,3 @@ def jdate_to_unix(jdate):
 
     # remove the millisecond precision
     return utc_to_unix(utc_date[:-1])
-

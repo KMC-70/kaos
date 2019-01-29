@@ -13,6 +13,7 @@ class InterpolationError(Exception):
     """Raised when the database has insufficient data points to perform interpolation."""
     pass
 
+
 class VisibilityFinderError(Exception):
     """Raised when the visibility algorithm enters an inconsistent state."""
     pass
