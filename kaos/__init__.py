@@ -9,6 +9,7 @@ from mpmath import mp
 
 from kaos.api.errors import APIError
 
+import sys
 
 def create_app(config="settings.cfg"):
     """Create and setup the KAOS app."""
@@ -29,8 +30,15 @@ def create_app(config="settings.cfg"):
                         format='%(asctime)s %(levelname)s %(module)s %(message)s',
                         level=numeric_level)
 
-    # TODO Add stderr handler
+    # Python 2 does not support initializing both the stream and file handler for logging.
+    # Therefore, the stream handler must be initialized separately.
+
+    consoleHandler = logging.StreamHandler(sys.stdout)
+    consoleHandler.setFormatter(logging.getLogger().handlers[0].formatter)
+    logging.getLogger().addHandler(consoleHandler)
+
     logging.info('======= KAOS START =======')
+    import pdb; pdb.set_trace()
 
     # Database setup
     from kaos.models import DB
