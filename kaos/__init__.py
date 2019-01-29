@@ -2,18 +2,18 @@
 
 from __future__ import division, print_function
 
-from flask import Flask, jsonify
 import logging
+import sys
 from time import gmtime, strftime
+
+from flask import Flask, jsonify
 from mpmath import mp
 
 from kaos.api.errors import APIError
 
-import sys
 
 def create_app(config="settings.cfg"):
     """Create and setup the KAOS app."""
-
 
     # App configuration
     app = Flask(__name__)
@@ -32,13 +32,11 @@ def create_app(config="settings.cfg"):
 
     # Python 2 does not support initializing both the stream and file handler for logging.
     # Therefore, the stream handler must be initialized separately.
-
-    consoleHandler = logging.StreamHandler(sys.stdout)
-    consoleHandler.setFormatter(logging.getLogger().handlers[0].formatter)
-    logging.getLogger().addHandler(consoleHandler)
+    console_handler = logging.StreamHandler(sys.stderr)
+    console_handler.setFormatter(logging.getLogger().handlers[0].formatter)
+    logging.getLogger().addHandler(console_handler)
 
     logging.info('======= KAOS START =======')
-    import pdb; pdb.set_trace()
 
     # Database setup
     from kaos.models import DB
