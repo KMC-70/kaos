@@ -26,10 +26,10 @@ class Interpolator:
         """Interpolate vectors for arbitrary timestamps, based on known timestamps.
 
         Args:
-            times: A 1-D array containing timestamps of the input data.
-            vecs: A numpy array containing the vector values to interpolate. Must be the
+            times (array): A 1-D array containing timestamps of the input data.
+            vecs (array): A numpy array containing the vector values to interpolate. Must be the
                 same length as times.
-            new_times: The times to interpolate for.
+            new_times (array): The times to interpolate for.
             kind: The type of interpolation to do. See scipy.interpolate for all options.
 
         Return:
@@ -43,7 +43,8 @@ class Interpolator:
     @staticmethod
     def linear_interp(platform_id, timestamp):
         """Use linear interpolation to estimate the position and velocity of a satellite
-        at a given time.
+        at a given time. For greater accuracy, use vector_interp() with kind="quadratic" or
+        "cubic".
 
         Args:
             platform_id: The UID of the satellite.
