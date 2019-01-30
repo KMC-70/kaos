@@ -2,6 +2,7 @@
 
 from __future__ import division, print_function
 
+import atexit
 import logging
 import sys
 from time import gmtime, strftime
@@ -67,3 +68,12 @@ def create_app(config="settings.cfg"):
     # pylint: enable=unused-variable,missing-docstring
 
     return app
+
+
+def application_exit():
+    """KAOS exit handler."""
+    logging.info("======= KAOS SHUTDOWN =======")
+
+
+atexit.register(application_exit)
+
