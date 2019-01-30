@@ -6,12 +6,13 @@ import json
 
 from flask import Blueprint, jsonify
 
+from kaos.models import ResponseHistory
 from .errors import NotFoundError
-from ..models import ResponseHistory
 
 # pylint: disable=invalid-name
 history_bp = Blueprint('history', __name__, url_prefix='/search')
 # pylint: enable=invalid-name
+
 
 @history_bp.route('/<int:history_id>', methods=['GET'])
 def get_history(history_id):
@@ -29,4 +30,3 @@ def get_history(history_id):
         raise NotFoundError("history_id", history_id)
 
     return jsonify(json.loads(history.response))
-

@@ -2,7 +2,6 @@
 
 from ddt import ddt, unpack, data
 
-import context
 from kaos.utils.time_conversion import utc_to_unix
 
 from .. import KaosTestCase

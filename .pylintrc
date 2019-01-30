@@ -1,7 +1,7 @@
 [MASTER]
 
 # Disable the message, report, category or checker with the given id(s).
-disable=too-few-public-methods
+disable=too-few-public-methods,bad-continuation,old-style-class,no-init
 # Disable member checking on runtime determined members that pylint cant detect
 generated-members=DB.*
 
@@ -14,7 +14,7 @@ score=no
 [BASIC]
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i, j, k, ex, Run, _, w, x, y, z
+good-names=i, j, k, ex, Run, _, w, x, y, z, f
 
 # Maximum number of characters on a single line.
 max-line-length=100

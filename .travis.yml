@@ -12,11 +12,14 @@ install:
     - pip install --upgrade pip
     - pip install --upgrade setuptools
     - pip install -r requirements.txt
+    - pip install codecov coverage pytest-cov
     - sudo apt update
     - ./scripts/psql_setup_linux
 
 script:
-    - pytest test
+    - pytest --cov=./ test
+    - flake8 kaos
+    - codecov
 
 notifications:
     email:

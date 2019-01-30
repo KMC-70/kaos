@@ -2,7 +2,6 @@
 
 import json
 
-import context
 from kaos.models import DB, ResponseHistory
 
 from .. import KaosTestCase

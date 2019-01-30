@@ -1,6 +1,9 @@
 """Defines all errors used by the view functions to signal a response to the caller."""
 
+import re
+
 from flask import jsonify
+
 
 class APIError(Exception):
     """Base class for all API related errors which are designed to trigger responses to the users.
@@ -38,6 +41,7 @@ class APIError(Exception):
         response.status_code = self.status_code
         return response
 
+
 class NotFoundError(APIError):
     """Error to be raised when an entry/id is not found.
 
@@ -57,7 +61,9 @@ class NotFoundError(APIError):
         reason = {field_name: 'Entry with value: {} not found'.format(value)}
         APIError.__init__(self, reason, status_code=404)
 
+
 class InputError(APIError):
+    """Error in case of a general user input error."""
     def __init__(self, field, reason):
         APIError.__init__(self, {field: reason}, status_code=422)
 
@@ -86,4 +92,5 @@ class InputSchemaError(APIError):
                 error_field = re.search(r'\'([a-zA-Z0-9]+)\'', error.message).group(1)
             error_reason = re.sub(r' \(u.+', '', error.message)
             reasons[error_field] = error_reason
+
         APIError.__init__(self, reasons, status_code=422)
