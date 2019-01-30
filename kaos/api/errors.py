@@ -52,7 +52,6 @@ class NotFoundError(APIError):
         }
     }
     """
-
     def __init__(self, field_name, value):
         """Args:
             field_name (str): The field/property whose entry was not found
