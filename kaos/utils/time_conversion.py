@@ -2,16 +2,18 @@
 
 import datetime
 import calendar
+
 from astropy.time import Time
 
 
-def utc_to_unix(time_string):
-    """Takes a string input of the format 'YYYYMMDDTHH:MM:SS.MS'  (where T is the letter 'T')
-    and converts it to a UNIX time stamp.
+def utc_to_unix(time_string, string_format='%Y%m%dT%H:%M:%S.%f'):
+    """Takes a string input of a specified date time format and converts it to a UNIX time stamp.
 
     Args:
         time_string (str): String representation of UTC time in the stated format. Must be
                            greater than 19700101.
+        string_format (str): The strptime format of the provided time string. Defaults to
+                             'YYYYMMDDTHH:MM:SS.MS'  (where T is the letter 'T')
 
     Returns:
         The UNIX time stamp representation of the input time string.
@@ -24,7 +26,7 @@ def utc_to_unix(time_string):
         This function returns the UNIX time stamps to second precision only.
     """
 
-    date_time = datetime.datetime.strptime(time_string, '%Y%m%dT%H:%M:%S.%f')
+    date_time = datetime.datetime.strptime(time_string, string_format)
     return calendar.timegm(date_time.utctimetuple())
 
 
