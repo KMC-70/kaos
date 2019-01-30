@@ -2,6 +2,11 @@
 
 from __future__ import division, print_function
 
+import atexit
+import logging
+import sys
+from time import gmtime, strftime
+
 from flask import Flask, jsonify
 from mpmath import mp
 
@@ -11,13 +16,30 @@ from kaos.api.errors import APIError
 def create_app(config="settings.cfg"):
     """Create and setup the KAOS app."""
 
-    # In order for visibility computations to be accurate a high degree of precision is required.
-    # Hence, the mpmath library is configured to use 100 decimal point precision.
-    mp.dps = 100
-
     # App configuration
     app = Flask(__name__)
     app.config.from_pyfile(config)
+
+    # Setup libraries
+    # In order for visibility computations to be accurate a high degree of precision is required.
+    # Hence, the mpmath library is configured to use 100 decimal point precision.
+    mp.dps = app.config['CALCULATION_PRECISION']
+
+    numeric_level = getattr(logging, app.config['LOGGING_LEVEL'].upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: {}'.format(app.config['LOGGING_LEVEL'].upper()))
+
+    logging.basicConfig(filename=strftime(app.config['LOGGING_FILE_NAME'], gmtime()),
+                        format='%(asctime)s %(levelname)s %(module)s %(message)s',
+                        level=numeric_level)
+
+    # Python 2 does not support initializing both the stream and file handler for logging.
+    # Therefore, the stream handler must be initialized separately.
+    console_handler = logging.StreamHandler(sys.stderr)
+    console_handler.setFormatter(logging.getLogger().handlers[0].formatter)
+    logging.getLogger().addHandler(console_handler)
+
+    logging.info('======= KAOS START =======')
 
     # Database setup
     from kaos.models import DB
@@ -49,3 +71,12 @@ def create_app(config="settings.cfg"):
     # pylint: enable=unused-variable,missing-docstring
 
     return app
+
+
+def application_exit():
+    """KAOS exit handler."""
+    logging.info("======= KAOS SHUTDOWN =======")
+
+
+atexit.register(application_exit)
+

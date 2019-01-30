@@ -33,7 +33,7 @@ class Satellite(SavableModel, DB.Model):
     platform_name = DB.Column(DB.String(50), nullable=False)
     orbit_segments = DB.relationship("OrbitSegment", backref='satellite', lazy=True)
     orbit_records = DB.relationship("OrbitRecord", backref='satellite', lazy=True)
-    maximum_altitude = DB.Column(DB.Float, nullable=True)
+    maximum_altitude = DB.Column(DB.Float)
 
     def __repr__(self):
         return '<Satellite: platform_id={}, platform_name={}>'.format(self.platform_id,

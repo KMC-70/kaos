@@ -8,6 +8,8 @@ These computations are based on a paper by Chao Han, Xiaojie Gao and Xiucong Sun
 
 from __future__ import division
 
+import logging
+
 import numpy as np
 import mpmath as mp
 
