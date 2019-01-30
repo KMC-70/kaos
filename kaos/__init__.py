@@ -11,7 +11,8 @@ from kaos.api.errors import APIError
 def create_app(config="settings.cfg"):
     """Create and setup the KAOS app."""
 
-    # Setup libraries
+    # In order for visibility computations to be accurate a high degree of precision is required.
+    # Hence, the mpmath library is configured to use 100 decimal point precision.
     mp.dps = 100
 
     # App configuration

@@ -1,4 +1,9 @@
-"""This module contains all functions required to perform the visibility computations"""
+"""This module contains all functions required to perform the visibility computations.
+
+These computations are based on a paper by Chao Han, Xiaojie Gao and Xiucong Sun:
+    Rapid Satellite-to-Site Visibility Determination Based on Self-Adaptive Interpolation Technique.
+    https://arxiv.org/abs/1611.02402
+"""
 # pylint: disable=too-many-locals
 
 from __future__ import division
@@ -18,7 +23,7 @@ class VisibilityFinder(object):
 
     def __init__(self, satellite_id, site, interval):
         """Args:
-            sattelite_id (integer): Satellite ID in the database
+            satellite_id (integer): Satellite ID in the database
             site (tuple:float): The site location as a lat/lon tuple
             interval (tuple:float): The search window as a start_time, end_time tuple
         """
@@ -128,7 +133,7 @@ class VisibilityFinder(object):
         # Since a4's computation is complex, it was split into several parts
         a4_first_term = mp.mpf(((4.0 / (interval_length ** 4.0)) *
                                 (visibility_start + (4.0 * visibility_mid) + visibility_end)))
-        a4_second_term = mp.mpf(((4.0 / (interval_length ** 4)) *
+        a4_second_term = mp.mpf(((4.0 / (interval_length ** 4.0)) *
                                  ((visibility_d_start * ((2.0 * start_time) + (3.0 * end_time))) +
                                   ((10.0 * visibility_d_mid) * (start_time + end_time)) +
                                   (visibility_d_end * ((3.0 * start_time) + (2.0 * end_time))))))
