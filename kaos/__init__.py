@@ -1,10 +1,12 @@
 """KAOS application initialization code."""
 
-from __future__ import division, print_function
+from __future__ import division
 
 import atexit
 import logging
 import sys
+import os
+import os.path
 from time import gmtime, strftime
 
 from flask import Flask, jsonify
@@ -29,7 +31,12 @@ def create_app(config="settings.cfg"):
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: {}'.format(app.config['LOGGING_LEVEL'].upper()))
 
-    logging.basicConfig(filename=strftime(app.config['LOGGING_FILE_NAME'], gmtime()),
+    # Create the logging directory if it doesnt exist
+    if not os.path.isdir(app.config['LOGGING_DIRECTORY']):
+        os.makedirs(app.config['LOGGING_DIRECTORY'])
+
+    log_file_path = os.path.join(app.config['LOGGING_DIRECTORY'], app.config['LOGGING_FILE_NAME'])
+    logging.basicConfig(filename=strftime(log_file_path, gmtime()),
                         format='%(asctime)s %(levelname)s %(module)s %(message)s',
                         level=numeric_level)
 
@@ -38,8 +45,6 @@ def create_app(config="settings.cfg"):
     console_handler = logging.StreamHandler(sys.stderr)
     console_handler.setFormatter(logging.getLogger().handlers[0].formatter)
     logging.getLogger().addHandler(console_handler)
-
-    logging.info('======= KAOS START =======')
 
     # Database setup
     from kaos.models import DB
@@ -69,6 +74,8 @@ def create_app(config="settings.cfg"):
     def api_error(error):
         return error.to_response()
     # pylint: enable=unused-variable,missing-docstring
+
+    logging.info('======= KAOS START =======')
 
     return app
 
