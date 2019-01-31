@@ -3,15 +3,18 @@
 Author: Team KMC-70.
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 
 from .schema import SEARCH_QUERY_VALIDATOR
 from .validators import validate_request_schema
 from .errors import InputError
-from ..utils.date import utc_to_unix
-from ..models import SatelliteInfo
+from ..errors import ViewConeError
+from ..utils.time_conversion import utc_to_unix
+from ..models import Satellite
 from ..algorithm.interpolator import Interpolator
 from ..algorithm.coord_conversion import lla_to_eci
+from ..algorithm.view_cone import reduce_poi
+from ..tuples import TimeInterval
 
 # pylint: disable=invalid-name
 visibility_bp = Blueprint('visibility', __name__, url_prefix='/visibility')
@@ -31,8 +34,10 @@ def get_satellite_visibility():
     """
 
     # Input data processing and conversion
-    if SatelliteInfo.query.get(request.json['PlatformID']) is None:
+    if Satellite.query.get(request.json['PlatformID']) is None:
         raise InputError('PlatformID', 'No such platform')
+
+    satellite = Satellite.get_by_id(request.json['PlatformID'])
 
     try:
         start_time = utc_to_unix(request.json['POI']['startTime'])
@@ -40,15 +45,29 @@ def get_satellite_visibility():
     except ValueError as error:
         raise InputError('POI', str(error))
 
+    # TODO Chop up the POI into 60 mins chunks
+    poi = TimeInterval(start_time, end_time)
+    site_eci = lla_to_eci(request.json['Target'][0], request.json['Target'][1], 0, start_time)
+
     try:
-        linear_interpolator = Interpolator(request.json['PlatformID'])
-        pos, vel = linear_interpolator.interpolate(start_time)
+        interpolator = Interpolator(request.json['PlatformID'])
+        sat_pos, sat_vel = interpolator.interpolate(start_time)
     except ValueError as error:
         raise InputError('Platform',
                          'No satellite data at {}'.format(request.json['POI']['startTime']))
 
-    target = lla_to_eci(request.json['Target'][0], request.json['Target'][1], 0, start_time)
-    # TODO Pass to view_cone
+    try:
+        poi_list = reduce_poi(site_eci, sat_pos, sat_vel, satellite.maximum_altitude, poi)
+    except ViewConeError:
+        poi_list = [poi]
+    except:
+        # TODO Throw a 505
+        pass
+
+    for poi in poi_list:
+        pass
+
+    # Now that the POI has been reduced manageable chunks, the visibility can be computer
 
     return start_time, end_time
 

@@ -59,6 +59,7 @@ def create_app(config="settings.cfg"):
     # pylint: disable=unused-variable,missing-docstring
     @app.route('/')
     def index():
+        raise Exception("Save me!")
         return 'Welcome to KAOS!'
 
     # Setup default error handlers. 404 and 505 are special case handlers because the framework can
