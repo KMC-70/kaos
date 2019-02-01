@@ -12,7 +12,7 @@ import numpy as np
 import mpmath as mp
 
 from .interpolator import Interpolator
-from .coord_conversion import lla_to_eci
+from .coord_conversion import lla_to_ecef
 from ..errors import VisibilityFinderError
 
 
@@ -33,6 +33,7 @@ class VisibilityFinder(object):
 
         self.sat_irp = Interpolator(satellite_id)
 
+
     def visibility(self, posix_time):
         """Calculate the visibility function of the satellite and the site at a given time.
 
@@ -49,7 +50,7 @@ class VisibilityFinder(object):
         # Since most helper functions don't play well with mpmath floats we have to perform a lossy
         # conversion.
         posix_time = float(posix_time)
-        site_pos = np.array(lla_to_eci(self.site[0], self.site[1], 0, posix_time)[0]) * mp.mpf(1.0)
+        site_pos = np.array(lla_to_ecef(self.site[0], self.site[1], 0)) * mp.mpf(1.0)
         site_normal_pos = site_pos / mp.norm(site_pos)
         sat_pos = self.sat_irp.interpolate(posix_time)[0]
         sat_site = np.subtract(sat_pos, site_pos)
@@ -71,15 +72,13 @@ class VisibilityFinder(object):
         # conversion.
         posix_time = float(posix_time)
         sat_pos_vel = np.array(self.sat_irp.interpolate(posix_time)) * mp.mpf(1.0)
-        site_pos_vel = np.array(lla_to_eci(self.site[0], self.site[1], 0, posix_time)) * mp.mpf(1.0)
+        site_pos = np.array(lla_to_ecef(self.site[0], self.site[1], 0)) * mp.mpf(1.0)
 
-        pos_diff = np.subtract(sat_pos_vel[0], site_pos_vel[0])
-        vel_diff = np.subtract(sat_pos_vel[1], site_pos_vel[1])
+        pos_diff = np.subtract(sat_pos_vel[0], site_pos[0])
+        vel_diff = sat_pos_vel[1]
 
-        site_normal_pos = site_pos_vel[0] / mp.norm(site_pos_vel[0])
-        site_normal_vel = ((site_pos_vel[1] / mp.norm(site_pos_vel[0])) -
-                           ((site_pos_vel[0] / mp.power(mp.norm(site_pos_vel[0]), 2)) *
-                            (mp.fdot(site_pos_vel[0], site_pos_vel[1]) / mp.norm(site_pos_vel[0]))))
+        site_normal_pos = site_pos / mp.norm(site_pos)
+        site_normal_vel = [0, 0, 0]
 
         first_term = mp.mpf(((1.0 / mp.norm(pos_diff)) *
                              (mp.fdot(vel_diff, site_normal_pos) +
@@ -290,8 +289,7 @@ class VisibilityFinder(object):
 
                 new_time_step_2 = self.bound_time_step_error((subinterval_start, subinterval_end),
                                                              error)
-                if ((float(abs(new_time_step_2 - new_time_step_1)) / new_time_step_1)
-                        <= tolerance_ratio):
+                if ((abs(new_time_step_2 - new_time_step_1)) / new_time_step_1) <= tolerance_ratio:
                     break
 
                 if (iter_num >= max_iter) and (new_time_step_1 <= new_time_step_2):
