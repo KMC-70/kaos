@@ -22,8 +22,9 @@ def create_app(config="settings.cfg"):
     app = Flask(__name__)
     app.config.from_pyfile(config)
 
-    # Setup libraries
-    mp.dps = app.config['CALCULATION_PRECISION']
+    # In order for visibility computations to be accurate a high degree of precision is required.
+    # Hence, the mpmath library is configured to use 100 decimal point precision.
+    mp.dps = app.config.get('CALCULATION_PRECISION', 100)
 
     numeric_level = getattr(logging, app.config['LOGGING_LEVEL'].upper(), None)
     if not isinstance(numeric_level, int):

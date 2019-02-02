@@ -13,6 +13,7 @@ from .. import KaosTestCase
 
 AccessTestInfo = namedtuple('AccessTestInfo', 'sat_name, target, accesses')
 
+
 @ddt
 class TestVisibilityFinder(KaosTestCase):
     """Test the visibility finder using specialized test files. These files are generated from STK
@@ -24,7 +25,7 @@ class TestVisibilityFinder(KaosTestCase):
         super(TestVisibilityFinder, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
 
-    #pylint: disable=line-too-long
+    # pylint: disable=line-too-long
     @staticmethod
     def parse_access_file(file_path):
         """Reads a KAOS access test file, these files follow the following format:
@@ -40,11 +41,10 @@ class TestVisibilityFinder(KaosTestCase):
             file_path (string): The path of the KAOS access test file.
 
         Returns:
-            An AccessTestInfo tule
+            An AccessTestInfo tuple.
         """
         with open(file_path) as access_file:
             access_info_text = access_file.read()
-
 
         section_regex = re.compile(r'={99}', re.MULTILINE)
         access_info = section_regex.split(access_info_text)
@@ -64,7 +64,7 @@ class TestVisibilityFinder(KaosTestCase):
             accesses.append((start_time, end_time))
 
         return AccessTestInfo(sat_name, target, accesses)
-    #pylint: enable=line-too-long
+    # pylint: enable=line-too-long
 
     @data(('test/algorithm/vancouver.test', (1514764802, 1514772000), 60),
           ('test/algorithm/vancouver.test', (1514768543, 1514772000), 60),
