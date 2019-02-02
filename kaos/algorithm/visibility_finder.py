@@ -33,7 +33,6 @@ class VisibilityFinder(object):
 
         self.sat_irp = Interpolator(satellite_id)
 
-
     def visibility(self, posix_time):
         """Calculate the visibility function of the satellite and the site at a given time.
 
