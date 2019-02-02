@@ -26,15 +26,16 @@ def create_app(config="settings.cfg"):
     # Hence, the mpmath library is configured to use 100 decimal point precision.
     mp.dps = app.config.get('CALCULATION_PRECISION', 100)
 
-    numeric_level = getattr(logging, app.config['LOGGING_LEVEL'].upper(), None)
+    numeric_level = getattr(logging, app.config.get('LOGGING_LEVEL', 'INFO').upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: {}'.format(app.config['LOGGING_LEVEL'].upper()))
 
     # Create the logging directory if it doesnt exist
-    if not os.path.isdir(app.config['LOGGING_DIRECTORY']):
+    if ('LOGGING_DIRECTORY' in app.config) and (not os.path.isdir(app.config['LOGGING_DIRECTORY'])):
         os.makedirs(app.config['LOGGING_DIRECTORY'])
 
-    log_file_path = os.path.join(app.config['LOGGING_DIRECTORY'], app.config['LOGGING_FILE_NAME'])
+    log_file_path = os.path.join(app.config.get('LOGGING_DIRECTORY', '.'),
+                                 app.config['LOGGING_FILE_NAME'])
     logging.basicConfig(filename=strftime(log_file_path, gmtime()),
                         format='%(asctime)s %(levelname)s %(module)s %(message)s',
                         level=numeric_level)
