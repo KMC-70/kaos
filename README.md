@@ -28,9 +28,9 @@ pip install -r requirements.txt
 ```
 
 ### Configure the database
-In order for KAOS to run it needs to be connected to a PSQL database. For convenience two scripts
-have been included in  the `scripts` directory to automatically set up the PSQL instances and create
-the databases and users expected by the default configs for KAOS.
+In order for KAOS to run, it needs to be connected to a PSQL database. For convenience, two scripts
+have been included in  the `scripts` directory to automatically set up the PSQL instances,
+the databases, and users expected by the default configs for KAOS.
 
 If another PSQL config is required with different users and database names then
 `kaos/settings_test.cfg` and `kaos/settings.cfg` must also be modified to point KAOS to the new DB.
