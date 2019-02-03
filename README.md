@@ -37,7 +37,7 @@ If another PSQL config is required with different users and database names then
 
 Optionally, if a quick database setup is required for rapid testing a prototyping then the following
 command can be used to quickly spin up a docker instance:
-`docker run --name kaos-test -e POSTGRES_PASSWORD=kaosuserpassword -e POSTGRES_USER=kaosuser -e POSTGRES_DB=kaostestdb -P -p 127.0.0.1:5432:5432 -d postgres`
+```docker run --name kaos-test -e POSTGRES_PASSWORD=kaosuserpassword -e POSTGRES_USER=kaosuser -e POSTGRES_DB=kaostestdb -P -p 127.0.0.1:5432:5432 -d postgres```
 
 ### Run tests and pep8
 
