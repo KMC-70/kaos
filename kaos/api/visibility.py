@@ -45,16 +45,19 @@ def get_satellite_visibility():
     except ValueError as error:
         raise InputError('POI', str(error))
 
-    # TODO Chop up the POI into 60 mins chunks
-    poi = TimeInterval(start_time, end_time)
-    site_eci = lla_to_eci(request.json['Target'][0], request.json['Target'][1], 0, start_time)
+    # Due to limitations of the accuracy of the view cone calculations the POI must be split into in
+    # intervals of 3600 seconds
+    interpolator = Interpolator(request.json['PlatformID'])
+    poi_list = (TimeInterval(poi_start, min(poi_start + 3600), end_time)
+                for poi_start in xrange(start_time, end_time, 3600))
 
-    try:
-        interpolator = Interpolator(request.json['PlatformID'])
-        sat_pos, sat_vel = interpolator.interpolate(start_time)
-    except ValueError as error:
-        raise InputError('Platform',
-                         'No satellite data at {}'.format(request.json['POI']['startTime']))
+    for poi in poi_list:
+        site_eci = lla_to_eci(request.json['Target'][0], request.json['Target'][1], 0, poi.start)
+        try:
+            sat_pos, sat_vel = interpolator.interpolate(start_time)
+        except ValueError as error:
+            raise InputError('Platform',
+                             'No satellite data at {}'.format(request.json['POI']['startTime']))
 
     try:
         poi_list = reduce_poi(site_eci, sat_pos, sat_vel, satellite.maximum_altitude, poi)

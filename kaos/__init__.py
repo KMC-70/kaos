@@ -22,20 +22,24 @@ def create_app(config="settings.cfg"):
     app = Flask(__name__)
     app.config.from_pyfile(config)
 
-    # Setup libraries
     # In order for visibility computations to be accurate a high degree of precision is required.
     # Hence, the mpmath library is configured to use 100 decimal point precision.
-    mp.dps = app.config['CALCULATION_PRECISION']
+    mp.dps = app.config.get('CALCULATION_PRECISION', 100)
 
-    numeric_level = getattr(logging, app.config['LOGGING_LEVEL'].upper(), None)
+    # Configure Logging
+    logging_level = app.config.get('LOGGING_LEVEL', 'INFO').upper()
+    logging_directory = app.config.get('LOGGING_DIRECTORY', '.')
+    logging_file = app.config['LOGGING_FILE_NAME']
+
+    numeric_level = getattr(logging, logging_level, None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: {}'.format(app.config['LOGGING_LEVEL'].upper()))
+        raise ValueError('Invalid log level: {}'.format(logging_level))
 
     # Create the logging directory if it doesnt exist
-    if not os.path.isdir(app.config['LOGGING_DIRECTORY']):
-        os.makedirs(app.config['LOGGING_DIRECTORY'])
+    if not os.path.isdir(logging_directory):
+        os.makedirs(logging_directory)
 
-    log_file_path = os.path.join(app.config['LOGGING_DIRECTORY'], app.config['LOGGING_FILE_NAME'])
+    log_file_path = os.path.join(logging_directory, logging_file)
     logging.basicConfig(filename=strftime(log_file_path, gmtime()),
                         format='%(asctime)s %(levelname)s %(module)s %(message)s',
                         level=numeric_level)
@@ -59,7 +63,6 @@ def create_app(config="settings.cfg"):
     # pylint: disable=unused-variable,missing-docstring
     @app.route('/')
     def index():
-        raise Exception("Save me!")
         return 'Welcome to KAOS!'
 
     # Setup default error handlers. 404 and 505 are special case handlers because the framework can
