@@ -72,7 +72,8 @@ class TestVisibilityApi(KaosTestCase):
         return AccessTestInfo(sat_name, target, accesses)
     # pylint: enable=line-too-long
 
-    @data(('test/algorithm/vancouver.test', ('20180101T00:00:00.0', '20180101T02:00:00.0'), 60))
+    @data(('test/algorithm/vancouver.test', ('20180101T00:00:00.0', '20180101T02:00:00.0'), 60),
+          ('test/algorithm/vancouver.test', ('20180102T00:00:00.0', '20180102T11:59:59.0'), 60))
     def test_full_visibility(self, test_data):
         """Tests that the visibility finder produces the same results as the access file.
 
@@ -86,14 +87,16 @@ class TestVisibilityApi(KaosTestCase):
             strict checking method provided.
         """
         access_file, interval, max_error = test_data
-        posix_interval = (utc_to_unix(interval[0]), utc_to_unix(interval[1]))
 
+        posix_interval = (utc_to_unix(interval[0]), utc_to_unix(interval[1]))
         access_info = self.parse_access_file(access_file, posix_interval)
+        satellite_id = Satellite.get_by_name(access_info.sat_name)[0].platform_id
 
         request = {'Target': access_info.target,
                    'POI': {'startTime': interval[0],
                            'endTime': interval[1]},
-                   'PlatformID': 1}
+                   'PlatformID': satellite_id}
+
         with self.app.test_client() as client:
             response = client.post('/visibility/search', json=request)
 
@@ -101,9 +104,10 @@ class TestVisibilityApi(KaosTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json['Opportunities']), len(access_info.accesses))
 
-        
-        """
-        for predicted_access in access_times:
+        for oppertunity in response.json['Opportunities']:
+            self.assertEqual(satellite_id, oppertunity['PlatformID'])
+            predicted_access = (oppertunity['start_time'], oppertunity['end_time'])
+            interval = posix_interval
             found = False
             for actual_access in access_info.accesses:
                 if (interval[0] > actual_access[0]) and (interval[1] < actual_access[1]):
@@ -129,4 +133,3 @@ class TestVisibilityApi(KaosTestCase):
 
             if not found:
                 raise Exception('Wrong access: {}'.format(predicted_access))
-        """
