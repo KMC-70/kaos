@@ -267,7 +267,6 @@ class VisibilityFinder(object):
         Note:
             This function assumes a viewing angle of 180 degrees
         """
-        import pdb; pdb.set_trace()
         start_time, end_time = self.interval
 
         # Initialize the algorithm variables

@@ -5,14 +5,14 @@ Author: Team KMC-70.
 
 import json
 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 
 from .schema import SEARCH_QUERY_VALIDATOR
 from .validators import validate_request_schema
 from .errors import InputError
 from ..errors import ViewConeError
 from ..utils.time_conversion import utc_to_unix
-from ..models import Satellite, ResponseHistory
+from ..models import DB, Satellite, ResponseHistory
 from ..algorithm.interpolator import Interpolator
 from ..algorithm.coord_conversion import lla_to_eci, lla_to_ecef, ecef_to_eci
 from ..algorithm.view_cone import reduce_poi
@@ -73,15 +73,17 @@ def get_satellite_visibility():
             reduced_poi_list.append(poi)
 
     # Now that the POI has been reduced manageable chunks, the visibility can be computed
-    site_ecef = lla_to_ecef(request.json['Target'][0], request.json['Target'][1], 0)
     visibility_periods = []
     for poi in reduced_poi_list:
-        visibility_finder = VisibilityFinder(request.json['PlatformID'], site_ecef, poi)
-        visibility_periods.append(visibility_finder.determine_visibility())
+        visibility_finder = VisibilityFinder(request.json['PlatformID'],
+                                             (request.json['Target'][0], request.json['Target'][1]),
+                                             poi)
+        visibility_periods.extend(visibility_finder.determine_visibility())
 
     # Prepare the response
-    response_history = ResponseHistory(response="")
+    response_history = ResponseHistory(response="{}")
     response_history.save()
+    DB.session.commit()
 
     response = {
         'id': response_history.uid,
@@ -89,13 +91,12 @@ def get_satellite_visibility():
     }
     for poi in visibility_periods:
         response['Opportunities'].append({'PlatformID': request.json['PlatformID'],
-                                          'start_time': poi.start,
-                                          'end_time': poi.end})
-
+                                          'start_time': float(poi.start),
+                                          'end_time': float(poi.end)})
 
     # Save the result for future use
     response_history.response = json.dumps(response)
-    import pdb; pdb.set_trace()
+    response_history.save()
+    DB.session.commit()
 
-    return start_time, end_time
-
+    return jsonify(response)
