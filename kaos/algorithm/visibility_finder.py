@@ -262,6 +262,9 @@ class VisibilityFinder(object):
         Returns:
             The subintervals over which the site is visible.
 
+        Raises:
+            VisibilityFinderError on an unexpected state.
+
         Note:
             This function assumes a viewing angle of 180 degrees
         """

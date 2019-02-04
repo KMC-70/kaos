@@ -12,8 +12,9 @@ from ..errors import ViewConeError
 from ..utils.time_conversion import utc_to_unix
 from ..models import Satellite
 from ..algorithm.interpolator import Interpolator
-from ..algorithm.coord_conversion import lla_to_eci
+from ..algorithm.coord_conversion import lla_to_eci, lla_to_ecef
 from ..algorithm.view_cone import reduce_poi
+from ..algorithm.visibility_finder import VisibilityFinder
 from ..tuples import TimeInterval
 
 # pylint: disable=invalid-name
@@ -51,6 +52,7 @@ def get_satellite_visibility():
     poi_list = (TimeInterval(poi_start, min(poi_start + 3600), end_time)
                 for poi_start in xrange(start_time, end_time, 3600))
 
+    reduced_poi_list = []
     for poi in poi_list:
         site_eci = lla_to_eci(request.json['Target'][0], request.json['Target'][1], 0, poi.start)
         try:
@@ -59,18 +61,25 @@ def get_satellite_visibility():
             raise InputError('Platform',
                              'No satellite data at {}'.format(request.json['POI']['startTime']))
 
-    try:
-        poi_list = reduce_poi(site_eci, sat_pos, sat_vel, satellite.maximum_altitude, poi)
-    except ViewConeError:
-        poi_list = [poi]
-    except:
-        # TODO Throw a 505
-        pass
+        # Since the viewing cone only works with eci coordinates, the sat coordinates must be
+        # converted
+        sat_pos, sat_vel = lla_to_ecef(sat_pos, sat_vel, poi.start)
 
-    for poi in poi_list:
-        pass
+        try:
+            reduced_poi_list.append(reduce_poi(site_eci, sat_pos, sat_vel,
+                                               satellite.maximum_altitude, poi))
+        except ViewConeError:
+            reduced_poi_list.append(poi)
 
-    # Now that the POI has been reduced manageable chunks, the visibility can be computer
+    # Now that the POI has been reduced manageable chunks, the visibility can be computed
+    site_ecef = lla_to_ecef(request.json['Target'][0], request.json['Target'][1], 0)
+    visibility_periods = []
+    for poi in reduced_poi_list:
+        visibility_finder = VisibilityFinder(request.json['PlatformID'], site_ecef, poi)
+        visibility_periods.append(visibility_finder.determine_visibility())
+
+
+    # TODO Prepare response
 
     return start_time, end_time
 
