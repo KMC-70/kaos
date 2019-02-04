@@ -9,7 +9,7 @@ SEARCH_SCHEMA = {
     'properties': {
         'Target': {
             'type': 'array',
-            'items': {'type': 'float'},
+            'items': {'type': "number"},
             'minItems': 2,
             'maxItems': 2,
         },
@@ -17,8 +17,8 @@ SEARCH_SCHEMA = {
             'type': 'object',
             'additionalProperties': False,
             'properties': {
-                'startTime': {'type':'number'},
-                'endTime': {'type':'number'},
+                'startTime': {'type': 'string'},
+                'endTime': {'type': 'string'},
             },
             'required': ['startTime', 'endTime'],
         },

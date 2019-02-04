@@ -8,13 +8,12 @@ These computations are based on a paper by Chao Han, Xiaojie Gao and Xiucong Sun
 
 from __future__ import division
 
-import logging
-
 import numpy as np
 import mpmath as mp
 
-from .interpolator import Interpolator
 from .coord_conversion import lla_to_ecef
+from .interpolator import Interpolator
+from ..tuples import TimeInterval
 from ..errors import VisibilityFinderError
 
 
@@ -268,6 +267,7 @@ class VisibilityFinder(object):
         Note:
             This function assumes a viewing angle of 180 degrees
         """
+        import pdb; pdb.set_trace()
         start_time, end_time = self.interval
 
         # Initialize the algorithm variables
@@ -315,7 +315,7 @@ class VisibilityFinder(object):
                 if access_start is None:
                     access_start = root
                 else:
-                    sat_accesses.append((access_start, root))
+                    sat_accesses.append(TimeInterval(access_start, root))
                     access_start = None
 
             # Set the start time and time step for the next interval
@@ -329,6 +329,6 @@ class VisibilityFinder(object):
             if self.visibility(end_time) <= 0:
                 raise VisibilityFinderError("Visibility interval started at {} "
                                             "but did not end at {}".format(access_start, end_time))
-            sat_accesses.append((access_start, end_time))
+            sat_accesses.append(TimeInterval(access_start, end_time))
 
         return sat_accesses
