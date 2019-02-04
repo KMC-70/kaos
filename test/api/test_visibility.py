@@ -73,6 +73,7 @@ class TestVisibilityApi(KaosTestCase):
     # pylint: enable=line-too-long
 
     @data(('test/algorithm/vancouver.test', ('20180101T00:00:00.0', '20180101T02:00:00.0'), 60),
+          ('test/algorithm/vancouver.test', ('20180104T00:00:00.0', '20180107T11:59:59.0'), 60),
           ('test/algorithm/vancouver.test', ('20180102T00:00:00.0', '20180102T11:59:59.0'), 60))
     def test_full_visibility(self, test_data):
         """Tests that the visibility finder produces the same results as the access file.
