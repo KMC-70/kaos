@@ -33,6 +33,20 @@ class VisibilityFinder(object):
 
         self.sat_irp = Interpolator(satellite_id)
 
+    def determine_visibility_perf(self):
+        import cProfile, pstats, sys
+        profile = cProfile.Profile()
+        profile.enable()
+
+        retval = self.determine_visibility()
+
+        profile.disable()
+        stats = pstats.Stats(pr, stream=sys.stdout)
+        stats.sort_stats('cumulative')
+        stats.print_stats()
+
+        return retval
+
     def visibility(self, posix_time):
         """Calculate the visibility function of the satellite and the site at a given time.
 

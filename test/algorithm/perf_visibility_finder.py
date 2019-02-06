@@ -1,4 +1,3 @@
-"""Testing the visibility_finder."""
 from ddt import ddt, data
 
 from kaos.algorithm.visibility_finder import VisibilityFinder
@@ -16,11 +15,7 @@ class TestVisibilityFinder(KaosVisibilityFinderTestCase):
         super(TestVisibilityFinder, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
 
-    @data(('test/algorithm/vancouver.test', (1514764802, 1514772000), 60),
-          ('test/algorithm/vancouver.test', (1514768543, 1514772000), 60),
-          ('test/algorithm/vancouver.test', (1514768340, 1514768400), 60),
-          ('test/algorithm/vancouver.test', (1514768543, 1514769143), 60),
-          ('test/algorithm/vancouver.test', (1515160800, 1515164400), 60))
+    @data(('test/algorithm/vancouver.test', (1514764802, 1514764802+0.01*24*60*60), 60))
     def test_full_visibility(self, test_data):
         """Tests that the visibility finder produces the same results as the access file.
 
@@ -38,7 +33,7 @@ class TestVisibilityFinder(KaosVisibilityFinderTestCase):
         access_info = self.parse_access_file(access_file)
         finder = VisibilityFinder(Satellite.get_by_name(access_info.sat_name)[0].platform_id,
                                   access_info.target, interval)
-        access_times = finder.determine_visibility()
+        access_times = finder.determine_visibility_perf()
 
         for predicted_access in access_times:
             found = False
