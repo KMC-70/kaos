@@ -15,7 +15,7 @@ class TestVisibilityFinder(KaosVisibilityFinderTestCase):
         super(TestVisibilityFinder, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
 
-    @data(('test/algorithm/vancouver.test', (1514764802, 1514764802+0.01*24*60*60), 60))
+    @data(('test/algorithm/vancouver.test', (1514764802, 1514764802+1*24*60*60), 60))
     def test_full_visibility(self, test_data):
         """Tests that the visibility finder produces the same results as the access file.
 

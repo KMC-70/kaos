@@ -41,7 +41,7 @@ class VisibilityFinder(object):
         retval = self.determine_visibility()
 
         profile.disable()
-        stats = pstats.Stats(pr, stream=sys.stdout)
+        stats = pstats.Stats(profile, stream=sys.stdout)
         stats.sort_stats('cumulative')
         stats.print_stats()
 
