@@ -14,6 +14,7 @@ import mpmath as mp
 from .interpolator import Interpolator
 from .coord_conversion import lla_to_ecef
 from ..errors import VisibilityFinderError
+from . import CubicEquationSolver as Solver
 
 
 class VisibilityFinder(object):
@@ -242,9 +243,9 @@ class VisibilityFinder(object):
 
         """
         # Calculate angle of visibility theta.
-        roots = mp.polyroots(self.find_approx_coeffs(time_interval), maxsteps=2000,
-                             extraprec=110)
-
+        # roots = mp.polyroots(self.find_approx_coeffs(time_interval), maxsteps=2000,
+        #                      extraprec=110)
+        roots = Solver.solve(*self.find_approx_coeffs(time_interval))
         return roots
 
     def determine_visibility(self, error=0.1, tolerance_ratio=0.1, max_iter=100):
