@@ -5,7 +5,7 @@ from collections import namedtuple
 import re
 
 from ddt import ddt, data
-
+from kaos.tuples import TimeInterval
 from kaos.models import Satellite
 from kaos.utils.time_conversion import utc_to_unix
 
@@ -61,7 +61,7 @@ class KaosVisibilityFinderTestCase(KaosTestCase):
             # Parse the start and end time
             start_time = utc_to_unix(access[1].rstrip().lstrip(), '%d %b %Y %H:%M:%S.%f')
             end_time = utc_to_unix(access[2].rstrip().lstrip(), '%d %b %Y %H:%M:%S.%f')
-            accesses.append((start_time, end_time))
+            accesses.append(TimeInterval(start_time, end_time))
 
         return AccessTestInfo(sat_name, target, accesses)
     # pylint: enable=line-too-long
