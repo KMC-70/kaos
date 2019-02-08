@@ -37,7 +37,7 @@ class Interpolator:
             is the interpolated result for targets[i].
         """
         # interpolate position, then velocity
-        approx = interpolate.interp1d(times, vecs, kind=kind, axis=0)
+        approx = interpolate.interp1d(times, vecs, kind=kind, axis=0, copy=False, assume_sorted=True)
         return approx(np.array(new_times))
 
     @staticmethod
@@ -78,7 +78,7 @@ class Interpolator:
 
         return tuple(pos), tuple(vel)
 
-    def interpolate(self, timestamp, kind="quadratic"):
+    def interpolate(self, timestamp, kind="linear"):
         """Estimate the position and velocity of the satellite at a given time.
 
         Args:
