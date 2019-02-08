@@ -4,17 +4,18 @@
 # Created by     :    Shril Kumar [(shril.iitdhn@gmail.com),(github.com/shril)] &
 #                     Devojoyti Halder [(devjyoti.itachi@gmail.com),(github.com/devojoyti)]
 
-# Project        :    Classified 
+# Project        :    Classified
 # Use Case       :    Instead of using standard numpy.roots() method for finding roots,
 #                     we have implemented our own algorithm which is ~10x faster than
 #                     in-built method.
 
 # Algorithm Link :    www.1728.org/cubic2.htm
 
-# This script (Cubic Equation Solver) is an indipendent program for computation of cubic equations. This script, however, has no
-# relation with original project code or calculations. It is to be also made clear that no knowledge of it's original project 
-# is included or used to device this script. This script is complete freeware developed by above signed users, and may furthur be
-# used or modified for commercial or non - commercial purpose.
+# This script (Cubic Equation Solver) is an independent program for computation of cubic equations.
+# This script, however, has no relation with original project code or calculations.
+# It is to be also made clear that no knowledge of it's original project is included or used to
+# device this script. This script is complete freeware developed by above signed users, and may
+# further be used or modified for commercial or non - commercial purpose.
 
 
 # Libraries imported for fast mathematical computations.
@@ -27,22 +28,6 @@ import numpy as np
 
 def solve(a, b, c, d):
 
-    if (a == 0 and b == 0):                     # Case for handling Liner Equation
-        return np.array([(-d * 1.0) / c])                 # Returning linear root as numpy array.
-
-    elif (a == 0):                              # Case for handling Quadratic Equations
-
-        D = c * c - 4.0 * b * d                       # Helper Temporary Variable
-        if D >= 0:
-            D = math.sqrt(D)
-            x1 = (-c + D) / (2.0 * b)
-            x2 = (-c - D) / (2.0 * b)
-        else:
-            D = math.sqrt(-D)
-            x1 = (-c + D * 1j) / (2.0 * b)
-            x2 = (-c - D * 1j) / (2.0 * b)
-            
-        return np.array([x1, x2])               # Returning Quadratic Roots as numpy array.
 
     f = findF(a, b, c)                          # Helper Temporary Variable
     g = findG(a, b, c, d)                       # Helper Temporary Variable
@@ -53,7 +38,7 @@ def solve(a, b, c, d):
             x = (d / (1.0 * a)) ** (1 / 3.0) * -1
         else:
             x = (-d / (1.0 * a)) ** (1 / 3.0)
-        return np.array([x, x, x])              # Returning Equal Roots as numpy array.
+        return np.array([x])                    # Returning one root
 
     elif h <= 0:                                # All 3 roots are Real
 
@@ -84,10 +69,10 @@ def solve(a, b, c, d):
             U = ((-T) ** (1 / 3.0)) * -1        # Helper Temporary Variable
 
         x1 = (S + U) - (b / (3.0 * a))
-        x2 = -(S + U) / 2 - (b / (3.0 * a)) + (S - U) * math.sqrt(3) * 0.5j
-        x3 = -(S + U) / 2 - (b / (3.0 * a)) - (S - U) * math.sqrt(3) * 0.5j
+        # x2 = -(S + U) / 2 - (b / (3.0 * a)) + (S - U) * math.sqrt(3) * 0.5j
+        # x3 = -(S + U) / 2 - (b / (3.0 * a)) - (S - U) * math.sqrt(3) * 0.5j
 
-        return np.array([x1, x2, x3])           # Returning One Real Root and two Complex Roots as numpy array.
+        return np.array([x1])           # Returning Only the Real Root
 
 
 # Helper function to return float value of f.

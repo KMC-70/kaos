@@ -43,8 +43,20 @@ class VisibilityFinder(object):
 
         profile.disable()
         stats = pstats.Stats(profile, stream=sys.stdout)
-        stats.sort_stats('cumulative')
-        stats.print_stats()
+        stats.strip_dirs().sort_stats('cumulative').print_stats(50)
+
+        return retval
+
+    def determine_visibility_brute_force_perf(self):
+        import cProfile, pstats, sys
+        profile = cProfile.Profile()
+        profile.enable()
+
+        retval = self.determine_visibility_brute_force()
+
+        profile.disable()
+        stats = pstats.Stats(profile, stream=sys.stdout)
+        stats.strip_dirs().sort_stats('cumulative').print_stats(50)
 
         return retval
 
@@ -88,7 +100,7 @@ class VisibilityFinder(object):
         sat_pos_vel = np.array(self.sat_irp.interpolate(posix_time)) * mp.mpf(1.0)
         site_pos = np.array(lla_to_ecef(self.site[0], self.site[1], 0)) * mp.mpf(1.0)
 
-        pos_diff = np.subtract(sat_pos_vel[0], site_pos[0])
+        pos_diff = np.subtract(sat_pos_vel[0], site_pos)
         vel_diff = sat_pos_vel[1]
 
         site_normal_pos = site_pos / mp.norm(site_pos)
@@ -242,13 +254,10 @@ class VisibilityFinder(object):
             calculated.
 
         """
-        # Calculate angle of visibility theta.
-        # roots = mp.polyroots(self.find_approx_coeffs(time_interval), maxsteps=2000,
-        #                      extraprec=110)
         roots = Solver.solve(*self.find_approx_coeffs(time_interval))
         return roots
 
-    def determine_visibility(self, error=0.1, tolerance_ratio=0.1, max_iter=100):
+    def determine_visibility(self, error=0.001, tolerance_ratio=0.1, max_iter=100):
         """Using the self adapting interpolation algorithm described in the cited paper, this
         function returns the subintervals for which the satellites have visibility.
 
@@ -285,7 +294,9 @@ class VisibilityFinder(object):
         # The subinterval_end is set to start the initial loop iteration
         subinterval_end = start_time
         # Defines the length of the initial subinterval (h)
-        prev_time_step = 1000
+        prev_time_step = 100
+        # Number of intervals so far (for performance measurement)
+        interval_num = 0
 
         # Check if we began scanning in the beginning of an access interval
         sat_accesses = []
@@ -314,12 +325,12 @@ class VisibilityFinder(object):
 
             # At this stage for the current interpolation stage the time step is sufficiently small
             # to keep the error low
+            interval_num += 1
             new_time_step = new_time_step_1
             subinterval_end = subinterval_start + new_time_step
 
             roots = [root for root in self.find_visibility((subinterval_start, subinterval_end))
-                     if isinstance(root, mp.mpf) and root <= subinterval_end
-                     and root >= subinterval_start]
+                     if root <= subinterval_end and root >= subinterval_start]
 
             for root in roots:
                 if access_start is None:
@@ -335,7 +346,54 @@ class VisibilityFinder(object):
         # If the loop terminates and an access end was still not found that means that point should
         # still be visible at the end of the period.
         # NOTE: subinterval_end would also work here but is difficult to test.
-        if access_start is not None:
+        if (access_start is not None) and (access_start < end_time):
+            if self.visibility(end_time) <= 0:
+                raise VisibilityFinderError("Visibility interval started at {} "
+                                            "but did not end at {}".format(access_start, end_time))
+            sat_accesses.append((access_start, end_time))
+
+        # TODO: switch this to log
+        print("average h: {}".format((end_time-start_time)/interval_num))
+
+        return sat_accesses
+
+
+    def determine_visibility_brute_force(self, step=5):
+        """Find visibility intervals using brute-force method. Visibility of site is checked at
+        intervals defined by step.
+
+        Args:
+            step (int): brute-force step, defaults to 5 second as mentioned in the cited paper.
+
+        Returns:
+            The subintervals over which the site is visible.
+        """
+        # Reduce unnecessary accuracy temporarily
+        global_accuracy = mp.mp.dps
+        mp.mp.dps = 5
+
+        real_function = lambda t:(self.visibility(t))
+
+        start_time, end_time = self.interval
+        sat_accesses = []
+        access_start = None
+        for time in range(start_time, end_time, step):
+            Visibility_val = self.visibility(time)
+
+            if access_start == None:
+                if (Visibility_val > 0):
+                    access_start = time
+            else:
+                if (Visibility_val < 0):
+                    sat_accesses.append((access_start, time))
+                    access_start = None
+
+        #Reduce accuracy temporarily
+        mp.mp.dps = global_accuracy
+
+        # If the loop terminates and an access end was still not found that means that point should
+        # still be visible at the end of the period.
+        if (access_start is not None) and (access_start < end_time):
             if self.visibility(end_time) <= 0:
                 raise VisibilityFinderError("Visibility interval started at {} "
                                             "but did not end at {}".format(access_start, end_time))
