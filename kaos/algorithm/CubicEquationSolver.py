@@ -25,9 +25,10 @@ import numpy as np
 # Main Function takes in the coefficient of the Cubic Polynomial
 # as parameters and it returns the roots in form of numpy array.
 # Polynomial Structure -> ax^3 + bx^2 + cx + d = 0
+# IMPORTANT NOTE: Function has been modified to ignore imaginary numbers and repeated roots
+
 
 def solve(a, b, c, d):
-
 
     f = findF(a, b, c)                          # Helper Temporary Variable
     g = findG(a, b, c, d)                       # Helper Temporary Variable
@@ -82,7 +83,8 @@ def findF(a, b, c):
 
 # Helper function to return float value of g.
 def findG(a, b, c, d):
-    return (((2.0 * (b ** 3.0)) / (a ** 3.0)) - ((9.0 * b * c) / (a **2.0)) + (27.0 * d / a)) /27.0
+    return ((((2.0 * (b ** 3.0)) / (a ** 3.0)) - ((9.0 * b * c) / (a ** 2.0)) +
+        (27.0 * d / a)) / 27.0)
 
 
 # Helper function to return float value of h.

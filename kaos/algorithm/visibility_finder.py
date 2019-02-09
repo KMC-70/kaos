@@ -34,25 +34,25 @@ class VisibilityFinder(object):
 
         self.sat_irp = Interpolator(satellite_id)
 
-    def determine_visibility_perf(self):
-        import cProfile, pstats, sys
+    def profile_determine_visibility(self, brute_force=False):
+        """Profile's the algorithm.
+
+            Args:
+                brute_force (boolean): if true runs the brute-force method instead.
+
+            Returns:
+                The return value of the algorithm
+        """
+        import cProfile
+        import pstats
+        import sys
         profile = cProfile.Profile()
         profile.enable()
 
-        retval = self.determine_visibility()
-
-        profile.disable()
-        stats = pstats.Stats(profile, stream=sys.stdout)
-        stats.strip_dirs().sort_stats('cumulative').print_stats(50)
-
-        return retval
-
-    def determine_visibility_brute_force_perf(self):
-        import cProfile, pstats, sys
-        profile = cProfile.Profile()
-        profile.enable()
-
-        retval = self.determine_visibility_brute_force()
+        if brute_force is False:
+            retval = self.determine_visibility()
+        else:
+            retval = self.determine_visibility_brute_force()
 
         profile.disable()
         stats = pstats.Stats(profile, stream=sys.stdout)
@@ -353,11 +353,11 @@ class VisibilityFinder(object):
             sat_accesses.append((access_start, end_time))
 
         # TODO: switch this to log
-        print("average h: {}".format((end_time-start_time)/interval_num))
+        # print("Average step length in seconds: {}".format((end_time - start_time) / interval_num))
 
         return sat_accesses
 
-
+    # pylint: disable=invalid-name
     def determine_visibility_brute_force(self, step=5):
         """Find visibility intervals using brute-force method. Visibility of site is checked at
         intervals defined by step.
@@ -372,23 +372,21 @@ class VisibilityFinder(object):
         global_accuracy = mp.mp.dps
         mp.mp.dps = 5
 
-        real_function = lambda t:(self.visibility(t))
-
         start_time, end_time = self.interval
         sat_accesses = []
         access_start = None
         for time in range(start_time, end_time, step):
-            Visibility_val = self.visibility(time)
+            visibility_val = self.visibility(time)
 
-            if access_start == None:
-                if (Visibility_val > 0):
+            if access_start is None:
+                if (visibility_val > 0):
                     access_start = time
             else:
-                if (Visibility_val < 0):
+                if (visibility_val < 0):
                     sat_accesses.append((access_start, time))
                     access_start = None
 
-        #Reduce accuracy temporarily
+        # Restore accuracy
         mp.mp.dps = global_accuracy
 
         # If the loop terminates and an access end was still not found that means that point should

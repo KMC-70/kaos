@@ -16,6 +16,7 @@ email-validator==1.0.2
 enum34==1.1.6
 flake8==3.6.0
 Flask==1.0.2
+Flask-Caching==1.4.0
 Flask-SQLAlchemy==2.3.2
 Flask-Validator==1.2.3
 funcsigs==1.0.2

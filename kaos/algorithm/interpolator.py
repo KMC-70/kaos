@@ -37,7 +37,8 @@ class Interpolator:
             is the interpolated result for targets[i].
         """
         # interpolate position, then velocity
-        approx = interpolate.interp1d(times, vecs, kind=kind, axis=0, copy=False, assume_sorted=True)
+        approx = interpolate.interp1d(times, vecs, kind=kind, axis=0, copy=False,
+                                      assume_sorted=True)
         return approx(np.array(new_times))
 
     @staticmethod
@@ -84,8 +85,8 @@ class Interpolator:
         Args:
             timestamp: The time for which to get the estimated position and velocity, in Unix
                 epoch seconds.
-            kind: The type of interpolation to do. This defaults to "quadratic." Alternatives
-                include "linear", "cubic", etc. See scipy.interpolate.
+            kind: The type of interpolation to do. This defaults to "linear." Alternatives
+                include "quadratic", "cubic", etc. See scipy.interpolate.
 
         Return:
             A tuple (pos, vel). Each of pos, vel is a 3-tuple representing the vector
