@@ -20,6 +20,7 @@ class Interpolator:
         self.segment_times = {}  # segment_id : list of times
         self.segment_positions = {}  # segment_id : list of positions
         self.segment_velocities = {}  # segment_id : list of velocities
+        self.segments = Satellite.get_by_id(platform_id).orbit_segments # Storing segment boundaries
 
     @staticmethod
     def vector_interp(times, vecs, new_times, kind):
@@ -95,10 +96,19 @@ class Interpolator:
         Raise:
             ValueError if interpolation could not be performed for the given timestamp.
         """
-        # find the correct segment
-        segment = OrbitSegment.get_by_platform_and_time(self.platform_id, timestamp)
+        # find the correct segment from stored data
+        segment = next((segment for segment in self.segments if segment.start_time <= timestamp
+                        and segment.end_time >= timestamp), None)
+
         if not segment:
-            raise InterpolationError("No segment found: {}, {}".format(self.platform_id, timestamp))
+            # segment was not in stored data, ask DB
+            segment = OrbitSegment.get_by_platform_and_time(self.platform_id, timestamp)
+
+            if not segment:
+                raise InterpolationError("No segment found: {}, {}".format(self.platform_id, timestamp))
+            else:
+                # update stored segments
+                self.segments = Satellite.get_by_id(self.platform_id).orbit_segments
 
         # get orbit records for the segment
         segment_id = segment.segment_id
