@@ -29,7 +29,7 @@ class VisibilityFinder(object):
             interval (tuple:float): The search window as a start_time, end_time tuple
         """
         self.satellite_id = satellite_id
-        self.site = site
+        self.site_ecef = lla_to_ecef(site[0], site[1], 0)
         self.interval = interval
 
         self.sat_irp = Interpolator(satellite_id)
@@ -56,7 +56,7 @@ class VisibilityFinder(object):
 
         profile.disable()
         stats = pstats.Stats(profile, stream=sys.stdout)
-        stats.strip_dirs().sort_stats('cumulative').print_stats(50)
+        stats.strip_dirs().sort_stats('tottime').print_stats(50)
 
         return retval
 
@@ -76,7 +76,7 @@ class VisibilityFinder(object):
         # Since most helper functions don't play well with mpmath floats we have to perform a lossy
         # conversion.
         posix_time = float(posix_time)
-        site_pos = np.array(lla_to_ecef(self.site[0], self.site[1], 0)) * mp.mpf(1.0)
+        site_pos = np.array(self.site_ecef) * mp.mpf(1.0)
         site_normal_pos = site_pos / mp.norm(site_pos)
         sat_pos = self.sat_irp.interpolate(posix_time)[0]
         sat_site = np.subtract(sat_pos, site_pos)
@@ -98,7 +98,7 @@ class VisibilityFinder(object):
         # conversion.
         posix_time = float(posix_time)
         sat_pos_vel = np.array(self.sat_irp.interpolate(posix_time)) * mp.mpf(1.0)
-        site_pos = np.array(lla_to_ecef(self.site[0], self.site[1], 0)) * mp.mpf(1.0)
+        site_pos = np.array(self.site_ecef) * mp.mpf(1.0)
 
         pos_diff = np.subtract(sat_pos_vel[0], site_pos)
         vel_diff = sat_pos_vel[1]
