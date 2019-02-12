@@ -14,7 +14,7 @@ import mpmath as mp
 from .interpolator import Interpolator
 from .coord_conversion import lla_to_ecef
 from ..errors import VisibilityFinderError
-from . import CubicEquationSolver as Solver
+from . import cubic_equation_solver as Solver
 
 
 class VisibilityFinder(object):

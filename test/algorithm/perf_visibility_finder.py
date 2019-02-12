@@ -12,17 +12,21 @@ from itertools import izip_longest
 from . import KaosVisibilityFinderTestCase
 
 @ddt
-class TestVisibilityFinder(KaosVisibilityFinderTestCase):
+class TestVisibilityFinderPerf(KaosVisibilityFinderTestCase):
     """Test the visibility finder's accuracy."""
 
     @classmethod
     def setUpClass(cls):
-        super(TestVisibilityFinder, cls).setUpClass()
+        super(TestVisibilityFinderPerf, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
 
     @data(('test/algorithm/vancouver.test', (1514764800, 1514764800+5*24*60*60)))
-    def test_full_visibility(self, test_data):
-        """Tests that the visibility finder produces the same results as the access file.
+    def test_visibility_perf(self, test_data):
+        """Tests that the visibility finder produces the same results as the access file and prints
+        accuracy and performance measurements at the end.
+        This test is meant to be run manually (not as part of the automated CI tests).
+
+        Use: pytest -s test/algorithm/perf_visibiliry_finder.py
 
         Args:
             test_data (tuple): A three tuple containing the:
@@ -35,6 +39,7 @@ class TestVisibilityFinder(KaosVisibilityFinderTestCase):
         finder = VisibilityFinder(Satellite.get_by_name(access_info.sat_name)[0].platform_id,
                                   access_info.target, interval)
 
+        #NOTE: change to burte_force=True to switch to brute-force method.
         access_times = np.asarray(finder.profile_determine_visibility(brute_force=False))
 
         interval = TimeInterval(*interval)

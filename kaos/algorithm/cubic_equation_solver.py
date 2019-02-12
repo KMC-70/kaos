@@ -29,6 +29,22 @@ import numpy as np
 
 
 def solve(a, b, c, d):
+    if (a == 0 and b == 0):                     # Case for handling Liner Equation
+        return np.array([(-d * 1.0) / c])                 # Returning linear root as numpy array.
+
+    elif (a == 0):                              # Case for handling Quadratic Equations
+
+        D = c * c - 4.0 * b * d                       # Helper Temporary Variable
+        if D >= 0:
+            D = math.sqrt(D)
+            x1 = (-c + D) / (2.0 * b)
+            x2 = (-c - D) / (2.0 * b)
+        else:
+            D = math.sqrt(-D)
+            x1 = (-c + D * 1j) / (2.0 * b)
+            x2 = (-c - D * 1j) / (2.0 * b)
+
+        return np.array([x1, x2])               # Returning Quadratic Roots as numpy array.
 
     f = findF(a, b, c)                          # Helper Temporary Variable
     g = findG(a, b, c, d)                       # Helper Temporary Variable
