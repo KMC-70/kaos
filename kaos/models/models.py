@@ -36,7 +36,8 @@ class Satellite(SavableModel, DB.Model):
     maximum_altitude = DB.Column(DB.Float, nullable=True)
 
     def __repr__(self):
-        return '<Satellite: platform_id={}, name={}>'.format(self.platform_id, self.name)
+        return '<Satellite: platform_id={}, platform_name={}>'.format(self.platform_id,
+                                                                      self.platform_name)
 
     @classmethod
     def __declare_last__(cls):
@@ -65,7 +66,7 @@ class Satellite(SavableModel, DB.Model):
         Returns:
             A list of satellites that match the name.
         """
-        return Satellite.query.filter(name=name).all()
+        return Satellite.query.filter_by(platform_name=name).all()
 
 
 class ResponseHistory(SavableModel, DB.Model):

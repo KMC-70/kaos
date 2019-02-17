@@ -64,7 +64,7 @@ def parse_ephemeris_file(filename):
     Calculate the maximum distance from earth center to the position if the satellite. Insert it
     in Satellite.
     """
-    sat = Satellite(platform_name=os.path.splitext(filename)[0])
+    sat = Satellite(platform_name=os.path.splitext(os.path.basename(filename))[0])
     sat.save()
     DB.session.commit()
 
