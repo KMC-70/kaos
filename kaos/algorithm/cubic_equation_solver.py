@@ -30,11 +30,10 @@ import numpy as np
 
 def solve(a, b, c, d):
     if (a == 0 and b == 0):                     # Case for handling Liner Equation
-        return np.array([(-d * 1.0) / c])                 # Returning linear root as numpy array.
+        return np.array([(-d * 1.0) / c])       # Returning linear root as numpy array.
 
     elif (a == 0):                              # Case for handling Quadratic Equations
-
-        D = c * c - 4.0 * b * d                       # Helper Temporary Variable
+        D = c * c - 4.0 * b * d                 # Helper Temporary Variable
         if D >= 0:
             D = math.sqrt(D)
             x1 = (-c + D) / (2.0 * b)
@@ -55,10 +54,10 @@ def solve(a, b, c, d):
             x = (d / (1.0 * a)) ** (1 / 3.0) * -1
         else:
             x = (-d / (1.0 * a)) ** (1 / 3.0)
+
         return np.array([x])                    # Returning one root
 
     elif h <= 0:                                # All 3 roots are Real
-
         i = math.sqrt(((g ** 2.0) / 4.0) - h)   # Helper Temporary Variable
         j = i ** (1 / 3.0)                      # Helper Temporary Variable
         k = math.acos(-(g / (2 * i)))           # Helper Temporary Variable
@@ -79,6 +78,7 @@ def solve(a, b, c, d):
             S = R ** (1 / 3.0)                  # Helper Temporary Variable
         else:
             S = (-R) ** (1 / 3.0) * -1          # Helper Temporary Variable
+
         T = -(g / 2.0) - math.sqrt(h)
         if T >= 0:
             U = (T ** (1 / 3.0))                # Helper Temporary Variable

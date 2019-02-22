@@ -11,10 +11,10 @@ from __future__ import division
 import numpy as np
 import mpmath as mp
 
+from .cubic_equation_solver import solve
 from .interpolator import Interpolator
 from .coord_conversion import lla_to_ecef
 from ..errors import VisibilityFinderError
-from . import cubic_equation_solver as Solver
 
 
 class VisibilityFinder(object):
@@ -254,7 +254,7 @@ class VisibilityFinder(object):
             calculated.
 
         """
-        roots = Solver.solve(*self.find_approx_coeffs(time_interval))
+        roots = solve(*self.find_approx_coeffs(time_interval))
         return roots
 
     def determine_visibility(self, error=0.001, tolerance_ratio=0.1, max_iter=100):

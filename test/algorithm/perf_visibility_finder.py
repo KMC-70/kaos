@@ -1,5 +1,6 @@
 from ddt import ddt, data
 
+from . import KaosVisibilityFinderTestCase
 from kaos.algorithm.visibility_finder import VisibilityFinder
 from kaos.algorithm import view_cone
 from kaos.tuples import TimeInterval
@@ -8,8 +9,7 @@ from kaos.models.parser import parse_ephemeris_file
 
 import mpmath as mp
 import numpy as np
-from itertools import izip_longest
-from . import KaosVisibilityFinderTestCase
+
 
 @ddt
 class TestVisibilityFinderPerf(KaosVisibilityFinderTestCase):
@@ -20,7 +20,7 @@ class TestVisibilityFinderPerf(KaosVisibilityFinderTestCase):
         super(TestVisibilityFinderPerf, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
 
-    @data(('test/algorithm/vancouver.test', (1514764800, 1514764800+5*24*60*60)))
+    @data(('test/algorithm/vancouver.test', (1514764800, 1514764800 + 5 * 24 * 60 * 60)))
     def test_visibility_perf(self, test_data):
         """Tests that the visibility finder produces the same results as the access file and prints
         accuracy and performance measurements at the end.
@@ -39,7 +39,7 @@ class TestVisibilityFinderPerf(KaosVisibilityFinderTestCase):
         finder = VisibilityFinder(Satellite.get_by_name(access_info.sat_name)[0].platform_id,
                                   access_info.target, interval)
 
-        #NOTE: change to burte_force=True to switch to brute-force method.
+        # NOTE: change to burte_force=True to switch to brute-force method.
         access_times = np.asarray(finder.profile_determine_visibility(brute_force=False))
 
         interval = TimeInterval(*interval)
@@ -59,18 +59,17 @@ class TestVisibilityFinderPerf(KaosVisibilityFinderTestCase):
                     .format(exp_end, mp.nstr(access_times[idx][1] - exp_end, 6)))
             else:
                 print("start, {}, {}, {}"
-                    .format(exp_start, mp.nstr(access_times[idx][0],11),
+                    .format(exp_start, mp.nstr(access_times[idx][0], 11),
                         mp.nstr(access_times[idx][0] - exp_start, 6)))
                 print("end  , {}, {}, {}"
-                    .format(exp_end, mp.nstr(access_times[idx][1],11),
+                    .format(exp_end, mp.nstr(access_times[idx][1], 11),
                         mp.nstr(access_times[idx][1] - exp_end, 6)))
                 total_error += error
                 access_times = np.delete(access_times, idx, axis=0)
 
-        print("\nTotal Error: {}".format(mp.nstr(total_error,12)))
+        print("\nTotal Error: {}".format(mp.nstr(total_error, 12)))
         print("Average Error: {}".format(mp.nstr(total_error / (len(expected_accesses) * 2))))
         if fail:
             raise Exception("Missing accesses. Unmatched: {}".format(access_times))
         if len(access_times) != 0:
             raise Exception("Extra accesses. Unmatched: {}".format(access_times))
-
