@@ -25,7 +25,7 @@ class TestInterpolator(KaosTestCase):
         # simple segment data
         for record in range(1, 4):
             t = float(record)
-            orbit_record = OrbitRecord(segment_id=cls.segment1.segment_id, 
+            orbit_record = OrbitRecord(segment_id=cls.segment1.segment_id,
                                        platform_id=cls.platform_id,
                                        time=t, position=(t, t, t), velocity=(t, t, t))
             orbit_record.save()
@@ -42,8 +42,8 @@ class TestInterpolator(KaosTestCase):
                 (np.exp(0.2 * times), np.exp(0.2 * times), np.exp(0.2 * times)))
         for i in range(times.size):
             orbit_record = OrbitRecord(segment_id=cls.segment2.segment_id,
-                                       platform_id=cls.platform_id, time=times[i], 
-                                       position=tuple(positions[i]), 
+                                       platform_id=cls.platform_id, time=times[i],
+                                       position=tuple(positions[i]),
                                        velocity=tuple(velocities[i]))
             orbit_record.save()
 
@@ -105,10 +105,10 @@ class TestInterpolator(KaosTestCase):
             true_pos = np.sin(t)
             true_vel = np.exp(0.2 * t)
 
-            pos, vel = interpolator.interpolate(t)
+            pos, vel = interpolator.interpolate(t,kind="quadratic")
             self.assertAlmostEqual(pos[0], true_pos, delta=0.05)
             self.assertAlmostEqual(vel[0], true_vel, delta=0.05)
-        
+
     def test_interpolate__no_platform_id(self):
         with self.assertRaises(ValueError):
             interpolator = Interpolator(self.platform_id+10)

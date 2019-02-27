@@ -24,6 +24,10 @@ def create_app(config="settings.cfg"):
     DB.init_app(app)
     DB.create_all(app=app)
 
+    # Cache setup
+    from kaos.models.models import CACHE
+    CACHE.init_app(app)
+
     # Blueprint and view registration
     from kaos import api
     app.register_blueprint(api.history_bp)
