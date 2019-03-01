@@ -27,6 +27,18 @@ source kenv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Configure the database
+In order for KAOS to run, it needs to be connected to a PSQL database. For convenience, two scripts
+have been included in  the `scripts` directory to automatically set up the PSQL instances,
+the databases, and users expected by the default configs for KAOS.
+
+If another PSQL config is required with different users and database names then
+`kaos/settings_test.cfg` and `kaos/settings.cfg` must also be modified to point KAOS to the new DB.
+
+Optionally, if a quick database setup is required for rapid testing a prototyping then the following
+command can be used to quickly spin up a docker instance:
+```docker run --name kaos-test -e POSTGRES_PASSWORD=kaosuserpassword -e POSTGRES_USER=kaosuser -e POSTGRES_DB=kaostestdb -P -p 127.0.0.1:5432:5432 -d postgres```
+
 ### Run tests and pep8
 
 ```
@@ -67,12 +79,12 @@ def get_the_answer(x, y, *args):
 
 # About the Project
 
-This project was created for the [UBC](https://www.ubc.ca/) Electrical and Computer Engineering Capstone project, in partnership with [MDA Corporation](https://mdacorporation.com/).
+This project was created for the [UBC](https://www.ubc.ca/) Electrical and Computer Engineering Capstone project, in partnership with [MDA Corporation](https://mdacorporation.com/). Core algorithms of the project are taken from [*Rapid Satellite-to-Site Visibility Determination Based on Self-Adaptive Interpolation Technique*](https://arxiv.org/abs/1611.02402) by Han et al.
 
 ## Team KMC-70
 
 James Asefa  
 Ray Li  
-Roy Rouyani  
+Rouyeen Rouyani  
 Lise Savard  
 Zeyad Tamimi  

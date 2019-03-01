@@ -12,7 +12,7 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
 
     def test_ephemeris_parser_single_file(self):
         """Light test to ensure that the parser can correctly parse an ephemeris file."""
-        parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
+        parse_ephemeris_file("ephemeris/Radarsat2.e")
 
         # test that the correct number of entries was created
         self.assertTrue(len(OrbitRecord.query.all()) == 17307) #taken from ephem file
@@ -42,7 +42,7 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
             self.assertAlmostEqual(segment.end_time, seg_end, places=4)
 
     def test_ephemeris_parser_multiple_file(self):
-        parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
+        parse_ephemeris_file("ephemeris/Radarsat2.e")
         orbit = OrbitRecord()
 
         # test that the correct number of entries was created
@@ -63,8 +63,8 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
 
     def test_find_maximum_distance(self):
         largest_q = 0
-        parse_ephemeris_file("ephemeris/Radarsat2_Fixed.e")
-        with open("ephemeris/Radarsat2_Fixed.e") as file:
+        parse_ephemeris_file("ephemeris/Radarsat2.e")
+        with open("ephemeris/Radarsat2.e") as file:
             for num, line in enumerate(file,1):
                 line = line.rstrip('\n')
                 if num > 46 and num < 17366:
