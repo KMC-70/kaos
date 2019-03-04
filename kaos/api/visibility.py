@@ -39,7 +39,7 @@ def get_satellite_visibility():
     if Satellite.query.get(request.json['PlatformID']) is None:
         raise InputError('PlatformID', 'No such platform')
 
-    satellite = Satellite.get_by_id(request.json['PlatformID'])
+    #satellite = Satellite.get_by_id(request.json['PlatformID'])
 
     try:
         start_time = utc_to_unix(request.json['POI']['startTime'])
@@ -49,7 +49,7 @@ def get_satellite_visibility():
 
     # Due to limitations of the accuracy of the view cone calculations the POI must be split into in
     # intervals of 3600 seconds
-    interpolator = Interpolator(request.json['PlatformID'])
+    #interpolator = Interpolator(request.json['PlatformID'])
     poi_list = [TimeInterval(poi_start, min(poi_start + 86400, end_time))
                 for poi_start in xrange(start_time, end_time, 86400)]
 
