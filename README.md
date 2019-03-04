@@ -79,12 +79,12 @@ def get_the_answer(x, y, *args):
 
 # About the Project
 
-This project was created for the [UBC](https://www.ubc.ca/) Electrical and Computer Engineering Capstone project, in partnership with [MDA Corporation](https://mdacorporation.com/).
+This project was created for the [UBC](https://www.ubc.ca/) Electrical and Computer Engineering Capstone project, in partnership with [MDA Corporation](https://mdacorporation.com/). Core algorithms of the project are taken from [*Rapid Satellite-to-Site Visibility Determination Based on Self-Adaptive Interpolation Technique*](https://arxiv.org/abs/1611.02402) by Han et al.
 
 ## Team KMC-70
 
 James Asefa  
 Ray Li  
-Roy Rouyani  
+Rouyeen Rouyani  
 Lise Savard  
 Zeyad Tamimi  

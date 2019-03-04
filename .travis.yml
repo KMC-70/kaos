@@ -17,7 +17,7 @@ install:
     - ./scripts/psql_setup_linux
 
 script:
-    - pytest -s -v --logging-level=DEBUG --cov=./ test
+    - travis_wait 20 pytest -s --cov=./ test
     - flake8 kaos
     - codecov
 

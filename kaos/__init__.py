@@ -35,7 +35,7 @@ def create_app(config="settings.cfg"):
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: {}'.format(logging_level))
 
-    # Create the logging directory if it doesnt exist
+    # Create the logging directory if it doesn't exist
     if not os.path.isdir(logging_directory):
         os.makedirs(logging_directory)
 
@@ -95,4 +95,3 @@ def application_exit():
 
 
 atexit.register(application_exit)
-
