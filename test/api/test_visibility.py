@@ -89,5 +89,20 @@ class TestVisibilityApi(KaosTestCase):
                 raise Exception('Wrong access: {}'.format(predicted_access))
 
     @file_data("test_data_visibility.json")
-    def test_visibility_incorrect_input(self, data):
-        logging.info(data)
+    def test_visibility_incorrect_input(self, Target, POI, PlatformID, Reasons):
+        request = {'Target': Target,
+                   'POI': POI,
+                   'PlatformID': PlatformID}
+
+        with self.app.test_client() as client:
+            response = client.post('/visibility/search', json=request)
+
+        logging.debug("Response was: %s\nCode: %s\n", response.json, response.status)
+
+        self.assertTrue(response.is_json)
+        self.assertEqual(response.status_code, 422)
+
+        for reason in Reasons:
+            if reason not in response.json["reasons"]:
+                self.assertTrue(False, msg="Missing reason in response: {}".format(reason))
+
