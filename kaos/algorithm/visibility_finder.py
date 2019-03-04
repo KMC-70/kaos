@@ -383,10 +383,10 @@ class VisibilityFinder(object):
             visibility_val = self.visibility(time)
 
             if access_start is None:
-                if (visibility_val > 0):
+                if visibility_val > 0:
                     access_start = time
             else:
-                if (visibility_val < 0):
+                if visibility_val < 0:
                     sat_accesses.append((access_start, time))
                     access_start = None
 

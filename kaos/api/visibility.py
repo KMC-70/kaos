@@ -53,7 +53,9 @@ def get_satellite_visibility():
     poi_list = [TimeInterval(poi_start, min(poi_start + 86400, end_time))
                 for poi_start in xrange(start_time, end_time, 86400)]
 
-    reduced_poi_list = []
+    reduced_poi_list = poi_list
+    # TODO: This part will be uncommented when viewcone is reliable.
+    """
     for poi in poi_list:
         site_eci = lla_to_eci(request.json['Target'][0], request.json['Target'][1], 0, poi.start)
         try:
@@ -71,6 +73,7 @@ def get_satellite_visibility():
                                                satellite.maximum_altitude, poi))
         except ViewConeError:
             reduced_poi_list.append(poi)
+    """
 
     # Now that the POI has been reduced manageable chunks, the visibility can be computed
     visibility_periods = []
