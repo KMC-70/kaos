@@ -283,7 +283,7 @@ class VisibilityFinder(object):
                                       100
 
         Returns:
-            The subintervals over which the site is visible.
+            A list of subintervals (TimeInterval) over which the site is visible.
 
         Raises:
             VisibilityFinderError on an unexpected state.
