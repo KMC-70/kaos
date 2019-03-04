@@ -76,7 +76,6 @@ def create_app(config="settings.cfg"):
     def method_not_allowed(error):
         response = jsonify(reason=str(error))
         response.status_code = error.code
-        import pdb; pdb.set_trace()
         return response
 
     @app.errorhandler(APIError)
