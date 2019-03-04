@@ -354,7 +354,7 @@ class VisibilityFinder(object):
             if self.visibility(end_time) <= 0:
                 raise VisibilityFinderError("Visibility interval started at {} "
                                             "but did not end at {}".format(access_start, end_time))
-            sat_accesses.append((access_start, end_time))
+            sat_accesses.append(TimeInterval(access_start, end_time))
 
         # TODO: switch this to log
         print("average h: {}".format((end_time-start_time)/interval_num))
