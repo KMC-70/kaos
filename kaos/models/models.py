@@ -1,5 +1,6 @@
 """Database models for KAOS."""
 
+from flask_caching import Cache
 from flask_sqlalchemy import SQLAlchemy
 from flask_validator import ValidateInteger
 from sqlalchemy import Index
@@ -7,6 +8,8 @@ from sqlalchemy import Index
 from .validators import ValidateString
 
 DB = SQLAlchemy()
+
+CACHE = Cache(config={'CACHE_TYPE': 'simple'})
 
 
 class SavableModel:
@@ -33,7 +36,7 @@ class Satellite(SavableModel, DB.Model):
     platform_name = DB.Column(DB.String(50), nullable=False)
     orbit_segments = DB.relationship("OrbitSegment", backref='satellite', lazy=True)
     orbit_records = DB.relationship("OrbitRecord", backref='satellite', lazy=True)
-    maximum_altitude = DB.Column(DB.Float, nullable=True)
+    maximum_altitude = DB.Column(DB.Float)
 
     def __repr__(self):
         return '<Satellite: platform_id={}, platform_name={}>'.format(self.platform_id,
@@ -132,6 +135,7 @@ class OrbitSegment(SavableModel, DB.Model):
         ValidateInteger(OrbitSegment.platform_id)
 
     @staticmethod
+    @CACHE.memoize(10000)
     def get_by_platform_and_time(platform_id, timestamp):
         """Find the segment that contains the given time, for the specified satellite.
 
