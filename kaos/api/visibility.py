@@ -39,7 +39,6 @@ def get_satellite_visibility():
     except ValueError as error:
         raise InputError('POI', str(error))
 
-
     # Due to limitations of the accuracy of the view cone calculations the POI must be split into in
     # intervals of 3600 seconds
     poi_list = [TimeInterval(poi_start, min(poi_start + 86400, end_time))
