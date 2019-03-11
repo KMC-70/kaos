@@ -28,7 +28,7 @@ SEARCH_SCHEMA = {
             'minItems': 1,
         },
     },
-    'required': ['Target', 'POI', 'PlatformID'],
+    'required': ['Target', 'POI'],
 }
 
 SEARCH_QUERY_VALIDATOR = Draft7Validator(SEARCH_SCHEMA)
