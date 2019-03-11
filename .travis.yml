@@ -17,7 +17,7 @@ install:
     - ./scripts/psql_setup_linux
 
 script:
-    - pytest --cov=./ test
+    - pytest -s --cov=./ test
     - flake8 kaos
     - codecov
 

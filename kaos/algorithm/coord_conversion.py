@@ -12,7 +12,6 @@ from ..constants import ELLIPSOID_A, ELLIPSOID_E
 from ..tuples import Vector3D
 
 
-
 def lla_to_ecef(lat_deg, lon_deg, alt=0):
     """Converts latitude, longitude, and altitude to earth-centered, earth-fixed (ECEF) Cartesian.
 
@@ -107,14 +106,17 @@ def lla_to_eci(lat, lon, alt, time_posix):
 
     return (eci_pos, eci_vel)
 
-def ecef_to_eci(ecef_coords, ecef_vel, posix_time):
+
+def ecef_to_eci(ecef_pos_list, ecef_vel_list, posix_time_list):
     """Converts a Cartesian vector in the ECCF to a GCRS frame at the given time.
     Args:
-        ecef_coords (tuple): A tuple of the cartesian coordinates of the object in the ECCF frame(m)
-        ecef_vel (tuple): A tuple of the velocity of the object in the EECF frame (m/s)
+        ecef_pos_list (list of tuple): A tuple of the Cartesian coordinates of the object in the
+        ECCF frame (m)
+        ecef_vel_list (tuple): A tuple of the velocity of the object in the EECF frame (m/s)
         time_posix (int): reference frame time
+
     Returns:
-    A tuple of Vector3D(x,y,z):
+    A tuple of lists with Vector3D(x,y,z) elements:
         Position Vector:
             x = GCRS X-coordinate (m)
             y = GCRS Y-coordinate (m)
@@ -123,23 +125,24 @@ def ecef_to_eci(ecef_coords, ecef_vel, posix_time):
             x = GCRS X-velocity (m/s)
             y = GCRS Y-velocity (m/s)
             z = GCRS Z-velocity (m/s)
+
     Note:
         Unlike the rest of the software that uses J2000 FK5, the ECI frame used here is
         GCRS; This can potentially introduce around 200m error for locations on surface of Earth.
     """
 
-    posix_time = Time(posix_time, format='unix')
-    cart_diff = coordinates.CartesianDifferential(ecef_vel, unit='m/s', copy=False)
-    cart_rep = coordinates.CartesianRepresentation(ecef_coords, unit='m', differentials=cart_diff,
+    posix_time_list = Time(posix_time_list, format='unix')
+    cart_diff = coordinates.CartesianDifferential(ecef_vel_list, unit='m/s', copy=False)
+    cart_rep = coordinates.CartesianRepresentation(ecef_pos_list, unit='m', differentials=cart_diff,
                                                    copy=False)
 
-    ecef = coordinates.ITRS(cart_rep, obstime=posix_time)
-    gcrs = ecef.transform_to(coordinates.GCRS(obstime=posix_time))
+    ecef = coordinates.ITRS(cart_rep, obstime=posix_time_list)
+    gcrs = ecef.transform_to(coordinates.GCRS(obstime=posix_time_list))
 
     # pylint: disable=no-member
-    positions = np_array(transpose(gcrs.cartesian.xyz.value),ndmin=2)
+    positions = np_array(transpose(gcrs.cartesian.xyz.value), ndmin=2)
     velocities = np_array(transpose(gcrs.cartesian.differentials.values()[0].d_xyz
-                                    .to(units.m / units.s).value),ndmin=2)
+                                    .to(units.m / units.s).value), ndmin=2)
     # pylint: enable=no-member
 
     ret_pos = [Vector3D(*pos) for pos in positions]
