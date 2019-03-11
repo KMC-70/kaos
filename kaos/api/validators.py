@@ -8,15 +8,15 @@ from .errors import APIError, InputSchemaError
 
 
 def validate_request_schema(schema_validator):
-    """Validation decorator used to ensure that incomming requests to the view follow a specific
-    json schema.
+    """Validation decorator used to ensure that incoming requests to the view follow a specific
+    JSON schema.
 
     Args:
-        schema_validator (fn): A scgema validation object used to check the request for errors.
+        schema_validator (fn): A schema validation object used to check the request for errors.
 
     Returns: A validation function decorator that wraps view functions in schema_validator.
     """
-    def validation_fucntion(view_fn):
+    def validation_function(view_fn):
         """Wraps a view function and ensures that the request matches the schema_validator.
 
         Args:
@@ -46,4 +46,4 @@ def validate_request_schema(schema_validator):
 
         return validated_function
 
-    return validation_fucntion
+    return validation_function

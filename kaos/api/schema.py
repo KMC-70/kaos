@@ -23,7 +23,9 @@ SEARCH_SCHEMA = {
             'required': ['startTime', 'endTime'],
         },
         'PlatformID': {
-            'type': 'number'
+            'type': 'array',
+            'items': {'type': "number"},
+            'minItems': 1,
         },
     },
     'required': ['Target', 'POI', 'PlatformID'],

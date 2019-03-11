@@ -15,6 +15,7 @@ from kaos.utils.time_conversion import utc_to_unix
 from .. import KaosTestCase
 
 
+
 @ddt
 class TestVisibilityApi(KaosTestCase):
     """Test class for the history API."""
@@ -49,7 +50,7 @@ class TestVisibilityApi(KaosTestCase):
         request = {'Target': access_info.target,
                    'POI': {'startTime': interval[0],
                            'endTime': interval[1]},
-                   'PlatformID': satellite_id}
+                   'PlatformID': [satellite_id]}
 
         with self.app.test_client() as client:
             response = client.post('/visibility/search', json=request)
@@ -87,6 +88,7 @@ class TestVisibilityApi(KaosTestCase):
 
             if not found:
                 raise Exception('Wrong access: {}'.format(predicted_access))
+
 
     @file_data("test_data_visibility.json")
     def test_visibility_incorrect_input(self, Target, POI, PlatformID, Reasons):

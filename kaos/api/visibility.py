@@ -30,58 +30,59 @@ def get_satellite_visibility():
     """Get the number of satellites that have visibility to a site.
 
     Requires:
-        The user supplies a query param, 'coords.'
-
-    Returns:
-        A string to be displayed.
+        A user request that contains a JSON payload which follows the SEARCH_SCHEMA.
     """
     # Input data processing and conversion
-    if Satellite.query.get(request.json['PlatformID']) is None:
-        raise InputError('PlatformID', 'No such platform')
-
-    # satellite = Satellite.get_by_id(request.json['PlatformID'])
-
     try:
         start_time = utc_to_unix(request.json['POI']['startTime'])
         end_time = utc_to_unix(request.json['POI']['endTime'])
     except ValueError as error:
         raise InputError('POI', str(error))
 
+
     # Due to limitations of the accuracy of the view cone calculations the POI must be split into in
     # intervals of 3600 seconds
-    # interpolator = Interpolator(request.json['PlatformID'])
     poi_list = [TimeInterval(poi_start, min(poi_start + 86400, end_time))
                 for poi_start in xrange(start_time, end_time, 86400)]
 
-    reduced_poi_list = poi_list
-    # TODO: This part will be uncommented when viewcone is reliable.
-    """
-    for poi in poi_list:
-        site_eci = lla_to_eci(request.json['Target'][0], request.json['Target'][1], 0, poi.start)
-        try:
-            sat_pos, sat_vel = interpolator.interpolate(start_time)
-        except ValueError as error:
-            raise InputError('Platform',
-                             'No satellite data at {}'.format(request.json['POI']['startTime']))
-
-        # Since the viewing cone only works with eci coordinates, the sat coordinates must be
-        # converted
-        sat_pos, sat_vel = ecef_to_eci(sat_pos, sat_vel, poi.start)
-
-        try:
-            reduced_poi_list.extend(reduce_poi(site_eci[0], sat_pos, sat_vel,
-                                               satellite.maximum_altitude, poi))
-        except ViewConeError:
-            reduced_poi_list.append(poi)
-    """
-
-    # Now that the POI has been reduced manageable chunks, the visibility can be computed
     visibility_periods = []
-    for poi in reduced_poi_list:
-        visibility_finder = VisibilityFinder(request.json['PlatformID'],
-                                             (request.json['Target'][0], request.json['Target'][1]),
-                                             poi)
-        visibility_periods.extend(visibility_finder.determine_visibility())
+    for satellite in request.json['PlatformID']:
+        if Satellite.query.get(satellite) is None:
+            raise InputError('PlatformID', 'No such platform')
+
+        # satellite = Satellite.get_by_id(request.json['PlatformID'])
+        # interpolator = Interpolator(request.json['PlatformID'])
+
+        # TODO: This part will be uncommented when viewcone is reliable.
+        reduced_poi_list = poi_list
+        """
+        for poi in poi_list:
+            site_eci = lla_to_eci(request.json['Target'][0], request.json['Target'][1], 0,
+                                  poi.start)
+            try:
+                sat_pos, sat_vel = interpolator.interpolate(start_time)
+            except ValueError as error:
+                raise InputError('Platform',
+                                 'No satellite data at {}'.format(request.json['POI']['startTime']))
+
+            # Since the viewing cone only works with eci coordinates, the sat coordinates must be
+            # converted
+            sat_pos, sat_vel = ecef_to_eci(sat_pos, sat_vel, poi.start)
+
+            try:
+                reduced_poi_list.extend(reduce_poi(site_eci[0], sat_pos, sat_vel,
+                                                   satellite.maximum_altitude, poi))
+            except ViewConeError:
+                reduced_poi_list.append(poi)
+        """
+
+        # Now that the POI has been reduced manageable chunks, the visibility can be computed
+        for poi in reduced_poi_list:
+            visibility_finder = VisibilityFinder(satellite,
+                                                 (request.json['Target'][0],
+                                                  request.json['Target'][1]),
+                                                 poi)
+            visibility_periods.append((satellite, visibility_finder.determine_visibility()))
 
     # Prepare the response
     response_history = ResponseHistory(response="{}")
@@ -92,10 +93,10 @@ def get_satellite_visibility():
         'id': response_history.uid,
         'Opportunities': []
     }
-    for poi in visibility_periods:
-        response['Opportunities'].append({'PlatformID': request.json['PlatformID'],
-                                          'start_time': float(poi.start),
-                                          'end_time': float(poi.end)})
+    for satellite, pois in visibility_periods:
+        response['Opportunities'].extend([{'PlatformID': satellite,
+                                           'start_time': float(poi.start),
+                                           'end_time': float(poi.end)} for poi in pois])
 
     # Save the result for future use
     response_history.response = json.dumps(response)

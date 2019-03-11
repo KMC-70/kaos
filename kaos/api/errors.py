@@ -86,7 +86,7 @@ class InputSchemaError(APIError):
         reasons = {}
         for error in schema_errors:
             if error.path:
-                error_field = error.path.pop()
+                error_field = error.path.popleft()
             else:
                 error_field = re.search(r'\'([a-zA-Z0-9]+)\'', error.message).group(1)
             error_reason = re.sub(r' \(u.+', '', error.message)

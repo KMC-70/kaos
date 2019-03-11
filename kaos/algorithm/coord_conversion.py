@@ -106,12 +106,13 @@ def lla_to_eci(lat, lon, alt, time_posix):
     return (eci_pos, eci_vel)
 
 
-def ecef_to_eci(eci_coords, eci_vel, posix_time):
-    """Converts a Cartesian vector in the ECCF to a GCRS frame at the given time.
+def ecef_to_eci(ecef_coords, ecef_vel, posix_time):
+    """Converts a Cartesian vector in the ECEF to a GCRS frame at the given time.
 
     Args:
-        eci_coords (tuple): A tuple of the cartesian coordinates of the object in the ECCF frame (m)
-        eci_vel (tuple): A tuple of the velocity of the object in the EECF frame (m/s)
+        ecef_coords (tuple): A tuple of the cartesian coordinates of the object in the ECCF frame
+                             (m)
+        ecef_vel (tuple): A tuple of the velocity of the object in the ECEF frame (m/s)
         time_posix (int): reference frame time
 
     Returns:
@@ -130,8 +131,8 @@ def ecef_to_eci(eci_coords, eci_vel, posix_time):
         GCRS; This can potentially introduce around 200m error for locations on surface of Earth.
     """
     posix_time = Time(posix_time, format='unix')
-    cart_diff = coordinates.CartesianDifferential(*eci_vel, unit='m/s')
-    cart_rep = coordinates.CartesianRepresentation(*eci_coords, unit='m', differentials=cart_diff)
+    cart_diff = coordinates.CartesianDifferential(*ecef_vel, unit='m/s')
+    cart_rep = coordinates.CartesianRepresentation(*ecef_coords, unit='m', differentials=cart_diff)
 
     ecef = coordinates.ITRS(cart_rep, obstime=posix_time)
     gcrs = ecef.transform_to(coordinates.GCRS(obstime=posix_time))

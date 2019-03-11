@@ -5,8 +5,8 @@
             "startTime": 1009090,
             "endTime": "100"
         },
-        "PlatformID": 0,
-        "Reasons": [ "startTime" ]
+        "PlatformID": [0],
+        "Reasons": [ "POI" ]
     },
     "incorrect_type_end_time": {
         "Target": [1, 2],
@@ -14,13 +14,13 @@
             "startTime": "1009090",
             "endTime": 100
         },
-        "PlatformID": 0,
-        "Reasons": [ "endTime" ]
+        "PlatformID": [0],
+        "Reasons": [ "POI" ]
     },
     "incorrect_type_poi": {
         "Target": [1, 2],
         "POI": 1,
-        "PlatformID": 0,
+        "PlatformID": [0],
         "Reasons": [ "POI" ]
     },
     "incorrect_type_target": {
@@ -29,14 +29,23 @@
             "startTime": "1009090",
             "endTime": "100"
         },
-        "PlatformID": 0,
+        "PlatformID": [0],
         "Reasons": [ "Target" ]
     },
-    "incorrect_type_platform": {
+    "incorrect_type_platform_1": {
         "Target": [1, 2],
         "POI": {
-            "startTime": "1009090",
-            "endTime": "100"
+            "startTime": "20180101T00:00:00.0",
+            "endTime": "20180101T00:00:00.0"
+        },
+        "PlatformID": ["Hello"],
+        "Reasons": [ "PlatformID" ]
+    },
+    "incorrect_type_platform_2": {
+        "Target": [1, 2],
+        "POI": {
+            "startTime": "20180101T00:00:00.0",
+            "endTime": "20180101T00:00:00.0"
         },
         "PlatformID": "Hello",
         "Reasons": [ "PlatformID" ]
@@ -44,10 +53,10 @@
     "incorrect_value_platform_id": {
         "Target": [1, 2],
         "POI": {
-            "startTime": "1009090",
-            "endTime": "100"
+            "startTime": "20180101T00:00:00.0",
+            "endTime": "20180101T00:00:00.0"
         },
-        "PlatformID": 100,
+        "PlatformID": [100],
         "Reasons": [ "PlatformID" ]
     },
     "incorrect_value_poi": {
@@ -56,7 +65,7 @@
             "startTime": "1009090",
             "endTime": "100"
         },
-        "PlatformID": 1,
+        "PlatformID": [1],
         "Reasons": [ "POI" ]
     },
     "incorrect_value_target": {
@@ -65,7 +74,7 @@
             "startTime": "1009090",
             "endTime": "100"
         },
-        "PlatformID": 1,
+        "PlatformID": [1],
         "Reasons": [ "Target" ]
     }
 }
