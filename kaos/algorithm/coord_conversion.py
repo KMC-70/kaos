@@ -5,6 +5,7 @@ from math import sqrt, sin, cos, atan, tan
 from numpy import rad2deg, deg2rad
 from astropy import coordinates
 from astropy.time import Time
+from astropy import units
 
 from ..constants import ELLIPSOID_A, ELLIPSOID_E
 from ..tuples import Vector3D
@@ -103,3 +104,40 @@ def lla_to_eci(lat, lon, alt, time_posix):
     eci_vel = Vector3D(loc_eci[1].x.value, loc_eci[1].y.value, loc_eci[1].z.value)
 
     return (eci_pos, eci_vel)
+
+
+def ecef_to_eci(ecef_coords, ecef_vel, posix_time):
+    """Converts a Cartesian vector in the ECEF to a GCRS frame at the given time.
+
+    Args:
+        ecef_coords (tuple): A tuple of the cartesian coordinates of the object in the ECCF frame
+                             (m)
+        ecef_vel (tuple): A tuple of the velocity of the object in the ECEF frame (m/s)
+        time_posix (int): reference frame time
+
+    Returns:
+    A tuple of Vector3D(x,y,z):
+        Position Vector:
+            x = GCRS X-coordinate (m)
+            y = GCRS Y-coordinate (m)
+            z = GCRS Z-coordinate (m)
+        Velocity Vector
+            x = GCRS X-velocity (m/s)
+            y = GCRS Y-velocity (m/s)
+            z = GCRS Z-velocity (m/s)
+
+    Note:
+        Unlike the rest of the software that uses J2000 FK5, the ECI frame used here is
+        GCRS; This can potentially introduce around 200m error for locations on surface of Earth.
+    """
+    posix_time = Time(posix_time, format='unix')
+    cart_diff = coordinates.CartesianDifferential(*ecef_vel, unit='m/s')
+    cart_rep = coordinates.CartesianRepresentation(*ecef_coords, unit='m', differentials=cart_diff)
+
+    ecef = coordinates.ITRS(cart_rep, obstime=posix_time)
+    gcrs = ecef.transform_to(coordinates.GCRS(obstime=posix_time))
+
+    # pylint: disable=no-member
+    return (Vector3D(*gcrs.cartesian.xyz.value),
+            Vector3D(*gcrs.cartesian.differentials.values()[0].d_xyz.to(units.m / units.s).value))
+    # pylint: enable=no-member

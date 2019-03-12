@@ -17,7 +17,7 @@ install:
     - ./scripts/psql_setup_linux
 
 script:
-    - travis_wait 20 pytest -s --cov=./ test
+    - pytest -s --cov=./ test
     - flake8 kaos
     - codecov
 

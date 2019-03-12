@@ -1,18 +1,21 @@
+"""Visibility Finder Test File."""
+
+from __future__ import print_function
+import mpmath as mp
+import numpy as np
+
 from ddt import ddt, data
 
-from . import KaosVisibilityFinderTestCase
 from kaos.algorithm.visibility_finder import VisibilityFinder
 from kaos.algorithm import view_cone
 from kaos.tuples import TimeInterval
 from kaos.models import Satellite
 from kaos.models.parser import parse_ephemeris_file
 
-import mpmath as mp
-import numpy as np
-
+from .. import KaosTestCase
 
 @ddt
-class TestVisibilityFinderPerf(KaosVisibilityFinderTestCase):
+class TestVisibilityFinderPerf(KaosTestCase):
     """Test the visibility finder's accuracy."""
 
     @classmethod
@@ -20,7 +23,7 @@ class TestVisibilityFinderPerf(KaosVisibilityFinderTestCase):
         super(TestVisibilityFinderPerf, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
 
-    @data(('test/algorithm/vancouver.test', (1514764800, 1514764800 + 5 * 24 * 60 * 60)))
+    @data(('test/test_data/vancouver.test', (1514764800, 1514764800 + 5 * 24 * 60 * 60)))
     def test_visibility_perf(self, test_data):
         """Tests that the visibility finder produces the same results as the access file and prints
         accuracy and performance measurements at the end.
@@ -47,7 +50,7 @@ class TestVisibilityFinderPerf(KaosVisibilityFinderTestCase):
 
         fail = False
         total_error = 0
-        print ("=============================== visibility report ===============================")
+        print("=============================== visibility report ===============================")
         for exp_start, exp_end in expected_accesses:
             idx = (np.abs(np.transpose(access_times)[0] - exp_start)).argmin()
             error = abs(exp_start - access_times[idx][0]) + abs(exp_end - access_times[idx][1])
@@ -71,5 +74,5 @@ class TestVisibilityFinderPerf(KaosVisibilityFinderTestCase):
         print("Average Error: {}".format(mp.nstr(total_error / (len(expected_accesses) * 2))))
         if fail:
             raise Exception("Missing accesses. Unmatched: {}".format(access_times))
-        if len(access_times) != 0:
+        if access_times:
             raise Exception("Extra accesses. Unmatched: {}".format(access_times))

@@ -62,6 +62,7 @@ def create_app(config="settings.cfg"):
     # Blueprint and view registration
     from kaos import api
     app.register_blueprint(api.history_bp)
+    app.register_blueprint(api.visibility_bp)
 
     # pylint: disable=unused-variable,missing-docstring
     @app.route('/')

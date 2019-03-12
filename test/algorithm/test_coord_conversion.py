@@ -3,6 +3,7 @@ import pytest, unittest
 from ddt import ddt,data
 
 from kaos.algorithm import coord_conversion
+from kaos.tuples import Vector3D
 
 @ddt
 class Test_lla_to_ecef(unittest.TestCase):
@@ -62,3 +63,31 @@ class Test_lla_to_eci(unittest.TestCase):
         self.assertAlmostEqual(loc_eci[0], test_data[4][0], delta=200)
         self.assertAlmostEqual(loc_eci[1], test_data[4][1], delta=200)
         self.assertAlmostEqual(loc_eci[2], test_data[4][2], delta=200)
+
+@ddt
+class Test_eccf_to_eci(unittest.TestCase):
+
+    @data((1514764800,
+           (-1.1923013839603376e+05, 7.1372890010702536e+06, 6.9552517228703119e+05),
+           (1.6248481050346918e+03, 7.5140287637908330e+02, -7.3372220261131497e+03),
+           (-6.9980497691646582e+06, -1.4019786400312854e+06, 7.0754554424135364e+05),
+           (-9.4202033738527109e+02, 9.5296010534027573e+02, -7.3355694593015414e+03)),
+          (1514766900,
+           (3.9804738738891535e+05, -3.6047780125065618e+06, -6.1941370541235292e+06),
+           (-1.7738930891952052e+03, -6.3698768084068670e+03, 3.5949496617909012e+03),
+           (3.2642112748636086e+06, 1.5584081196010089e+06, -6.1997168462066837e+06),
+           (6.4919176217824288e+03, 6.5176028122607818e+02, 3.5837784721647768e+03)))
+    def test_lla_to_eci(self, test_data):
+        """
+        Test for ECEF conversion to GCRS
+        Note the 1m delta, see function docstring for details.
+
+        test_data format:
+          posix_time, ecef pos, ecef vel, expected eci pos, expected eci vel
+
+        Values generated using stk.
+        """
+        time, test_pos, test_vel, real_pos, real_vel = test_data
+        eci_pos, eci_vel = coord_conversion.ecef_to_eci(test_pos, test_vel, time)
+        self.assertEqual(real_pos, pytest.approx(eci_pos, 1))
+        self.assertEqual(real_vel, pytest.approx(eci_vel, 1))

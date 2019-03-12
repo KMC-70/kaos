@@ -8,14 +8,13 @@ These computations are based on a paper by Chao Han, Xiaojie Gao and Xiucong Sun
 
 from __future__ import division
 
-import logging
-
 import numpy as np
 import mpmath as mp
 
 from .cubic_equation_solver import solve
-from .interpolator import Interpolator
 from .coord_conversion import lla_to_ecef
+from .interpolator import Interpolator
+from ..tuples import TimeInterval
 from ..errors import VisibilityFinderError
 
 
@@ -284,7 +283,10 @@ class VisibilityFinder(object):
                                       100
 
         Returns:
-            The subintervals over which the site is visible.
+            A list of subintervals (TimeInterval) over which the site is visible.
+
+        Raises:
+            VisibilityFinderError on an unexpected state.
 
         Note:
             This function assumes a viewing angle of 180 degrees
@@ -338,7 +340,7 @@ class VisibilityFinder(object):
                 if access_start is None:
                     access_start = root
                 else:
-                    sat_accesses.append((access_start, root))
+                    sat_accesses.append(TimeInterval(access_start, root))
                     access_start = None
 
             # Set the start time and time step for the next interval
@@ -352,7 +354,7 @@ class VisibilityFinder(object):
             if self.visibility(end_time) <= 0:
                 raise VisibilityFinderError("Visibility interval started at {} "
                                             "but did not end at {}".format(access_start, end_time))
-            sat_accesses.append((access_start, end_time))
+            sat_accesses.append(TimeInterval(access_start, end_time))
 
         # TODO: switch this to log
         # print("Average step length in seconds: {}".format((end_time - start_time) / interval_num))
@@ -381,10 +383,10 @@ class VisibilityFinder(object):
             visibility_val = self.visibility(time)
 
             if access_start is None:
-                if (visibility_val > 0):
+                if visibility_val > 0:
                     access_start = time
             else:
-                if (visibility_val < 0):
+                if visibility_val < 0:
                     sat_accesses.append((access_start, time))
                     access_start = None
 
@@ -397,6 +399,6 @@ class VisibilityFinder(object):
             if self.visibility(end_time) <= 0:
                 raise VisibilityFinderError("Visibility interval started at {} "
                                             "but did not end at {}".format(access_start, end_time))
-            sat_accesses.append((access_start, end_time))
+            sat_accesses.append(TimeInterval(access_start, end_time))
 
         return sat_accesses
