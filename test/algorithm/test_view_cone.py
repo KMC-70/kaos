@@ -1,4 +1,3 @@
-import pytest, unittest
 from random import randint
 
 from ddt import ddt, data
@@ -16,6 +15,7 @@ from kaos.algorithm.coord_conversion import geod_to_geoc_lat, ecef_to_eci
 from kaos.algorithm.interpolator import Interpolator
 from .. import KaosTestCase
 
+
 @ddt
 class TestViewCone(KaosTestCase):
     """ Test cases for viewing cone algorithm"""
@@ -24,7 +24,6 @@ class TestViewCone(KaosTestCase):
     def setUpClass(cls):
         super(TestViewCone, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
-
 
     @data(('test/test_data/vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 10))
     def test_reduce_poi_with_access_file(self, test_data):
@@ -57,25 +56,23 @@ class TestViewCone(KaosTestCase):
 
         reduced_poi_list = interval_utils.fuse_neighbor_intervals(reduced_poi_list)
 
-
         # Check coverage
         for poi in reduced_poi_list:
             trimmed_accesses = filter(lambda access: not(
-                                                    (poi.start - error_threshold < access.start) and
-                                                    (poi.end + error_threshold > access.end)),
-                                                    trimmed_accesses)
+                (poi.start - error_threshold < access.start) and
+                (poi.end + error_threshold > access.end)),
+                trimmed_accesses)
         if trimmed_accesses:
             print("Remaining accesses: ", trimmed_accesses)
             raise Exception("Some accesses are not covered")
 
-
     @data(
         # Test case with only 2 roots
-        ((40,80), (6.8779541256529745e+06, 4.5999490750985817e+04, 1.9992074250214235e+04),
+        ((40, 80), (6.8779541256529745e+06, 4.5999490750985817e+04, 1.9992074250214235e+04),
          (-5.1646755701370530e+01, 5.3829730836383123e+03, 5.3826328640238344e+03),
          6878140 * (1 + 1.8e-16), TimeInterval(J2000 + 43200, J2000 + SECONDS_PER_DAY + 43200)),
         # Test case with no roots (always inside the viewing cone)
-        ((0,0), (7.3779408317663465e+06, 4.9343382472754820e+04, 2.1445380156320374e+04),
+        ((0, 0), (7.3779408317663465e+06, 4.9343382472754820e+04, 2.1445380156320374e+04),
          (-5.0830385351827260e+01, 7.3220252051302523e+03, 6.4023511402880990e+02),
          7378140 * (1 + 1.8e-16), TimeInterval(J2000 + 43200, J2000 + SECONDS_PER_DAY + 43200))
     )

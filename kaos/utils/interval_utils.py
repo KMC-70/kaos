@@ -1,5 +1,7 @@
 """ Utility functions to manage TimeInterval objects"""
+
 from itertools import tee
+
 from ..tuples import TimeInterval
 
 
@@ -14,14 +16,18 @@ def pairwise(iterable):
 
 
 def fuse_neighbor_intervals(input_list, assume_sorted=False):
-    """
-    Merges neighboring TimeIntervals that share the same border.
+    """Merges neighboring TimeIntervals that share the same start/end time.
     example: [(0,100),(100,200),(300,400)] -> [(0,200),(300,400)]
+
+    Assumptions:
+        Intervals don't overlaps.
+        Maximum of 2 intervals share any one border.
+        For any interval, there is maximum of one neighbor.
 
     Args:
         input_list (list of TimeInterval): list of time intervals to be fused.
         assume_sorted (boolean): Whether input list is sorted with respect to TimeInterval.start
-                                 values
+                                 values. defaults to False.
     """
     if not assume_sorted:
         input_list.sort(key=lambda x: x.start)
@@ -42,12 +48,14 @@ def fuse_neighbor_intervals(input_list, assume_sorted=False):
 
 
 def trim_poi_segments(interval_list, poi):
-    """Semi-private: Adjusts list of intervals so that all intervals fit inside the poi
-        Args:
-          interval_list(list of TimeIntervals) = the interval to be trimmed
-          poi(TimeInterval) = period of interest, reference for trimming
-        Returns:
-          List of TimeIntervals that fit inside the poi
+    """Adjusts list of intervals so that all intervals fit inside the poi
+
+    Args:
+      interval_list(list of TimeIntervals) = the interval to be trimmed
+      poi(TimeInterval) = period of interest, reference for trimming
+
+    Returns:
+      List of TimeIntervals that fit inside the poi
     """
     ret_list = []
     for interval in interval_list:
