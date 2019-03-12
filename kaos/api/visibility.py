@@ -12,6 +12,7 @@ from .validators import validate_request_schema
 from .errors import InputError
 from ..errors import ViewConeError
 from ..utils.time_conversion import utc_to_unix
+from ..utils.time_intervals import calculate_common_intervals
 from ..models import DB, Satellite, ResponseHistory
 from ..algorithm.interpolator import Interpolator
 from ..algorithm.coord_conversion import lla_to_eci, lla_to_ecef, ecef_to_eci
@@ -24,10 +25,27 @@ visibility_bp = Blueprint('visibility', __name__, url_prefix='/visibility')
 opertunity_bp = Blueprint('opertunity', __name__, url_prefix='/opertunity')
 # pylint: enable=invalid-name
 
-def request_parse_poi(request):
+
+def request_parse_poi(validated_request):
+    """Parses the POI from a provided visibility api request.
+
+    Args:
+        validated_request (obj):  A Flask request object that has been generated for a
+                                  visibility/opertunity endpoint.
+
+    Requieres:
+        The request object MUST have been validated against the requested schema and must have a
+        'POI' key in its JSON payload.
+
+    Throws:
+        ValueError: If the POI is invalid. i.e. The start time is greater than the end time.
+
+    Returns:
+        A tuple of (start_time, end_time) where each of the two times are represented in UNIX time.
+    """
     try:
-        start_time = utc_to_unix(request.json['POI']['startTime'])
-        end_time = utc_to_unix(request.json['POI']['endTime'])
+        start_time = utc_to_unix(validated_request.json['POI']['startTime'])
+        end_time = utc_to_unix(validated_request.json['POI']['endTime'])
 
         if start_time > end_time:
             raise ValueError("Start time is greater than the end time!")
@@ -38,12 +56,28 @@ def request_parse_poi(request):
     return start_time, end_time
 
 
-def request_parse_platform_id(request):
-    if 'PlatformID' not in request.json:
+def request_parse_platform_id(validated_request):
+    """Parses the PlatformID from a provided visibility api request.
+
+    Args:
+        validated_request (obj):  A Flask request object that has been generated for a
+                                  visibility/opertunity endpoint.
+
+    Requieres:
+        The request object MUST have been validated against the requested schema.
+
+    Throws:
+        InputError: If any provided platform ID(s) are invalid.
+
+    Returns:
+        A list of Satellite model objects.
+    """
+
+    if 'PlatformID' not in validated_request.json:
         return Satellite.query.all()
 
     sattalites = []
-    for satellite in request.json['PlatformID']:
+    for satellite in validated_request.json['PlatformID']:
         satellite = Satellite.query.get(satellite)
         if satellite is None:
             raise InputError('PlatformID', 'No such platform')
@@ -53,18 +87,6 @@ def request_parse_platform_id(request):
     return sattalites
 
 
-def common_intervals_helper(intervals1, intervals2):
-    common_intervals = []
-    for interval1 in intervals1:
-        for interval2 in intervals2:
-            intersection = interval1.intersection(interval2)
-            if intersection:
-                common_intervals.append(intersection)
-    return common_intervals
-
-
-def calculate_common_intervals(intervals_list):
-    pass
 
 def get_point_visibility_helper(satellite, site, poi):
     start_time, end_time = poi
@@ -118,8 +140,31 @@ def get_area_visibility():
         for target in request.json['TargetArea']:
             target_visibility[target] = get_point_visibility_helper(satellite, target, poi)
 
-        common_target 
-        satellite_area_visibility[satellite] = target_visibility
+        satellite_area_visibility[satellite] = \
+            calculate_common_intervals(target_visibility.values())
+
+
+    __import__('pdb').set_trace()
+    # Prepare the response
+    response_history = ResponseHistory(response="{}")
+    response_history.save()
+    DB.session.commit()
+
+    response = {
+        'id': response_history.uid,
+        'Opportunities': [{'PlatformID': satellite.platform_id,
+                           'start_time': float(access.start),
+                           'end_time': float(access.end)}
+                          for satellite, accesses in satellite_area_visibility.items()
+                          for access in accesses]
+    }
+
+    # Save the result for future use
+    response_history.response = json.dumps(response)
+    response_history.save()
+    DB.session.commit()
+
+    return jsonify(response)
 
 
 @visibility_bp.route('/search', methods=['POST'])
