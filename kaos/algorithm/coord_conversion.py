@@ -7,8 +7,9 @@ from numpy import array as np_array
 from astropy import coordinates
 from astropy.time import Time
 from astropy import units
+import mpmath as mp
 
-from ..constants import ELLIPSOID_A, ELLIPSOID_E
+from ..constants import ELLIPSOID_A, ELLIPSOID_E, J2000, SECONDS_PER_DAY
 from ..tuples import Vector3D
 
 
@@ -73,6 +74,27 @@ def geod_to_geoc_lat(geod_lat_deg):
     return rad2deg(geoc_lat_rad)
 
 
+def geod_to_eci_geoc_lon(geod_lon, posix_time):
+    """Converts geodetic longitude to geocentric longitude in the ECI frame
+
+    Args:
+        geod_lon (float): geodetic longitude (decimal degrees)
+        posix_time (int): reference frame time
+
+    Returns:
+        Geocentric longitude
+
+    Note:
+        Based on section 6 of "Changing Coordinates in the Context of Orbital Mechanics"
+        available at https://apps.dtic.mil/dtic/tr/fulltext/u2/1027338.pdf
+    """
+    GMT_sidereal_angle = ((posix_time - mp.mpf(J2000)) * (360 / SECONDS_PER_DAY) +
+                          mp.mpf('280.46062'))
+    site_lon = GMT_sidereal_angle + geod_lon
+
+    return mp.floor(site_lon) % 360 + (site_lon - mp.floor(site_lon))
+
+
 def lla_to_eci(lat, lon, alt, time_posix):
     """Converts geodetic lat,lon,alt, to a Cartesian vector in GCRS frame at the given time.
 
@@ -130,7 +152,6 @@ def ecef_to_eci(ecef_pos_list, ecef_vel_list, posix_time_list):
         Unlike the rest of the software that uses J2000 FK5, the ECI frame used here is
         GCRS; This can potentially introduce around 200m error for locations on surface of Earth.
     """
-
     posix_time_list = Time(posix_time_list, format='unix')
     cart_diff = coordinates.CartesianDifferential(ecef_vel_list, unit='m/s', copy=False)
     cart_rep = coordinates.CartesianRepresentation(ecef_pos_list, unit='m', differentials=cart_diff,

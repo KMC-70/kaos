@@ -87,7 +87,7 @@ class KaosTestCase(TestCase):
                     (end_time >= access_range[0] and end_time <= access_range[1]) or
                     (start_time <= access_range[0] and end_time >= access_range[0]) or
                     (end_time <= access_range[1] and end_time >= access_range[1]))):
-                accesses.append((start_time, end_time))
+                accesses.append(TimeInterval(start_time, end_time))
 
         return AccessTestInfo(sat_name, target, accesses)
     # pylint: enable=line-too-long

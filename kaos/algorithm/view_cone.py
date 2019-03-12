@@ -4,9 +4,9 @@ from __future__ import division
 import mpmath as mp
 from numpy import cross
 
-from .coord_conversion import geod_to_geoc_lat
+from .coord_conversion import geod_to_geoc_lat, geod_to_eci_geoc_lon
 from ..utils import interval_utils
-from ..constants import SECONDS_PER_DAY, ANGULAR_VELOCITY_EARTH, THETA_NAUGHT, EARTH_RADIUS
+from ..constants import ANGULAR_VELOCITY_EARTH, THETA_NAUGHT, EARTH_RADIUS
 from ..tuples import TimeInterval
 from ..errors import ViewConeError
 
@@ -29,38 +29,36 @@ def reduce_poi(site_lat_lon, sat_pos, sat_vel, q_magnitude, poi):
       ViewConeError: on inconclusive result from Viewing cone
     """
 
+    # Get geocentric lat/lon (in the ECI frame) at the beginning of poi
     site_geoc_lat = geod_to_geoc_lat(site_lat_lon[0])
-
-    GMT_sidereal_angle = (poi.start - mp.mpf(946728000))*(360/SECONDS_PER_DAY) + mp.mpf('280.46062')
-    site_lon = GMT_sidereal_angle + site_lat_lon[1]
-    site_lon = mp.floor(site_lon)%360 + (site_lon - mp.floor(site_lon))
-
-    if site_lon > 180:
-        site_lon -= 360
+    site_lon = geod_to_eci_geoc_lon(site_lat_lon[1], poi.start)
 
     if poi.start > poi.end:
         raise ValueError("poi.start is after poi.end")
 
     # Maximum m
-    expected_final_m = mp.ceil((poi.end - poi.start)/(24*60*60))
+    expected_final_m = mp.ceil((poi.end - poi.start) / (24 * 60 * 60))
     # Find the intervals to cover the input POI
     interval_list = []
     m = 0
     while m < expected_final_m:
         try:
-            t_1, t_2, t_3, t_4 = _view_cone_calc(site_geoc_lat, site_lon, sat_pos, sat_vel, q_magnitude, m)
+            t_1, t_2, t_3, t_4 = _view_cone_calc(site_geoc_lat, site_lon, sat_pos, sat_vel,
+                                                 q_magnitude, m)
             # Validate the intervals
             if t_3 < t_1:
-                interval_list.append(TimeInterval(poi.start+t_3, poi.start+t_1))
+                interval_list.append(TimeInterval(poi.start + t_3, poi.start + t_1))
             else:
-                interval_list.append(TimeInterval(poi.start+t_3, poi.start+(m+1)*24*60*60))
-                interval_list.append(TimeInterval(poi.start+m*24*60*60, poi.start+t_1))
+                interval_list.append(TimeInterval(poi.start + m * 24 * 60 * 60, poi.start + t_1))
+                interval_list.append(TimeInterval(poi.start + t_3, poi.start +
+                                                  (m + 1) * 24 * 60 * 60))
 
             if t_2 < t_4:
-                interval_list.append(TimeInterval(poi.start+t_2, poi.start+t_4))
+                interval_list.append(TimeInterval(poi.start + t_2, poi.start + t_4))
             else:
-                interval_list.append(TimeInterval(poi.start+t_2, poi.start+(m+1)*24*60*60))
-                interval_list.append(TimeInterval(poi.start+m*24*60*60, poi.start+t_4))
+                interval_list.append(TimeInterval(poi.start + m * 24 * 60 * 60, poi.start + t_4))
+                interval_list.append(TimeInterval(poi.start + t_2, poi.start +
+                                                  (m + 1) * 24 * 60 * 60))
 
             if t_2 < t_4 and t_3 < t_1:
                 # It's unexpected that two roots wrap around (i.e. both conditions to be true)
@@ -73,6 +71,7 @@ def reduce_poi(site_lat_lon, sat_pos, sat_vel, q_magnitude, poi):
 
     # Adjusting the intervals to fit inside the input POI and return
     return interval_utils.trim_poi_segments(interval_list, poi)
+
 
 def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_magnitude, m):
     """Semi-private: Performs the viewing cone visibility calculation for the day defined by m.
@@ -103,50 +102,32 @@ def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_magnitude, m):
     # P vector (also referred  to as orbital angular momentum in the paper) calculations
     p_unit_x, p_unit_y, p_unit_z = cross(sat_pos, sat_vel) / (mp.norm(sat_pos) * mp.norm(sat_vel))
 
-    # Formulas from paper:
-    gamma = THETA_NAUGHT + mp.asin((EARTH_RADIUS * mp.sin((mp.pi / 2) + THETA_NAUGHT)) / q_magnitude)
-    gamma2 = mp.pi - gamma
+    # Formulas from paper
+    gamma1 = THETA_NAUGHT + mp.asin((EARTH_RADIUS * mp.sin((mp.pi / 2) + THETA_NAUGHT)) /
+                                   q_magnitude)
+    gamma2 = mp.pi - gamma1
 
-    arctan_term = mp.atan2(p_unit_x , p_unit_y)
-    arcsin_term = lambda g:(mp.asin((mp.cos(g) - p_unit_z * mp.sin(lat_geoc)) /
-                            (mp.sqrt((p_unit_x ** 2) + (p_unit_y ** 2)) * mp.cos(lat_geoc))))
-
-    arcsin_term_gamma = arcsin_term(gamma)
-    arcsin_term_gamma2 = arcsin_term(gamma2)
+    arctan_term = mp.atan2(p_unit_x, p_unit_y)
+    arcsin_term_gamma, arcsin_term_gamma2 = [(mp.asin((mp.cos(gamma) - p_unit_z * mp.sin(lat_geoc))
+                                             / (mp.sqrt((p_unit_x ** 2) + (p_unit_y ** 2)) *
+                                              mp.cos(lat_geoc)))) for gamma in[gamma1, gamma2]]
 
     angle_1 = (arcsin_term_gamma - lon_geoc - arctan_term + 2 * mp.pi * m)
     angle_2 = (mp.pi - arcsin_term_gamma - lon_geoc - arctan_term + 2 * mp.pi * m)
     angle_3 = (arcsin_term_gamma2 - lon_geoc - arctan_term + 2 * mp.pi * m)
     angle_4 = (mp.pi - arcsin_term_gamma2 - lon_geoc - arctan_term + 2 * mp.pi * m)
+    angles = [angle_1, angle_2, angle_3, angle_4]
 
     # Check for complex answers
-    if [x for x in [angle_1, angle_2, angle_3, angle_4] if not isinstance(x, mp.mpf)]:
+    if [x for x in angles if not isinstance(x, mp.mpf)]:
         raise ValueError()
 
     # Map all angles to 0 to 2*pi
-    while angle_1 < 0:
-        angle_1 += 2*mp.pi
-    while angle_1 > 2*mp.pi:
-        angle_1 -= 2*mp.pi
+    for idx in range(len(angles)):
+        while angles[idx] < 0:
+            angles[idx] += 2 * mp.pi
+        while angles[idx] > 2 * mp.pi:
+            angles[idx] -= 2 * mp.pi
 
-    while angle_2 < 0:
-        angle_2 += 2*mp.pi
-    while angle_2 > 2*mp.pi:
-        angle_2 -= 2*mp.pi
-
-    while angle_3 < 0:
-        angle_3 += 2*mp.pi
-    while angle_3 > 2*mp.pi:
-        angle_3 -= 2*mp.pi
-
-    while angle_4 < 0:
-        angle_4 += 2*mp.pi
-    while angle_4 > 2*mp.pi:
-        angle_4 -= 2*mp.pi
-
-    time_1 = mp.nint((1 / ANGULAR_VELOCITY_EARTH) * angle_1)
-    time_2 = mp.nint((1 / ANGULAR_VELOCITY_EARTH) * angle_2)
-    time_3 = mp.nint((1 / ANGULAR_VELOCITY_EARTH) * angle_3)
-    time_4 = mp.nint((1 / ANGULAR_VELOCITY_EARTH) * angle_4)
-
-    return time_1, time_2, time_3, time_4
+    # Calculate the corresponding time for each angle and return
+    return [mp.nint((1 / ANGULAR_VELOCITY_EARTH) * angle) for angle in angles]
