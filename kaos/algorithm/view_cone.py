@@ -45,7 +45,7 @@ def reduce_poi(site_lat_lon, sat_pos, sat_vel, q_magnitude, poi):
         try:
             t_1, t_2, t_3, t_4 = _view_cone_calc(site_geoc_lat, site_lon, sat_pos, sat_vel,
                                                  q_magnitude, m)
-            # Validate the intervals
+            # Construct intervals based on calculated roots
             if t_3 < t_1:
                 interval_list.append(TimeInterval(poi.start + t_3, poi.start + t_1))
             else:
@@ -60,8 +60,8 @@ def reduce_poi(site_lat_lon, sat_pos, sat_vel, q_magnitude, poi):
                 interval_list.append(TimeInterval(poi.start + t_2, poi.start +
                                                   (m + 1) * 24 * 60 * 60))
 
-            if t_2 < t_4 and t_3 < t_1:
-                # It's unexpected that two roots wrap around (i.e. both conditions to be true)
+            if t_2 > t_4 and t_3 > t_1:
+                # It's unexpected that two roots wrap around (i.e. both if conditions to be false)
                 raise ViewConeError("Internal Viewing cone error")
             m += 1
 

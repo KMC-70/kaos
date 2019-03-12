@@ -24,8 +24,20 @@ class TestViewCone(KaosTestCase):
     def setUpClass(cls):
         super(TestViewCone, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
+        parse_ephemeris_file("ephemeris/Aqua_27424.e")
+        parse_ephemeris_file("ephemeris/Rapideye2_33312.e")
+        parse_ephemeris_file("ephemeris/TanSuo1_28220.e")
+        parse_ephemeris_file("ephemeris/Terra_25994.e")
+        parse_ephemeris_file("ephemeris/Worldview1_32060.e")
 
-    @data(('test/test_data/vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 10))
+    @data(
+        ('test/test_data/vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 10),
+        ('test/test_data/Aqua_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 150),
+        ('test/test_data/Rapideye2_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 10),
+        ('test/test_data/TanSuo1_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 10),
+        ('test/test_data/Terra_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 130),
+        ('test/test_data/Worldview1_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 50)
+        )
     def test_reduce_poi_with_access_file(self, test_data):
         """Test reduce_poi with access file"""
 

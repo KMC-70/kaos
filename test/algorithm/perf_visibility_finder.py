@@ -25,8 +25,18 @@ class TestVisibilityFinderPerf(KaosTestCase):
     def setUpClass(cls):
         super(TestVisibilityFinderPerf, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
+        parse_ephemeris_file("ephemeris/Aqua_27424.e")
+        parse_ephemeris_file("ephemeris/Rapideye2_33312.e")
+        parse_ephemeris_file("ephemeris/TanSuo1_28220.e")
+        parse_ephemeris_file("ephemeris/Terra_25994.e")
+        parse_ephemeris_file("ephemeris/Worldview1_32060.e")
 
     @data(('test/test_data/vancouver.test', (1514764800, 1514764800 + 5 * 24 * 60 * 60)))
+    @data(('test/test_data/Aqua_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    @data(('test/test_data/Rapideye2_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    @data(('test/test_data/TanSuo1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    @data(('test/test_data/Terra_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    @data(('test/test_data/Worldview1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
     def test_visibility_perf(self, test_data):
         """Tests that the visibility finder produces the same results as the access file and prints
         accuracy and performance measurements at the end.
@@ -105,6 +115,13 @@ class TestVisibilityFinderPerf(KaosTestCase):
             profile.disable()
             stats = pstats.Stats(profile, stream=sys.stdout)
             stats.strip_dirs().sort_stats('cumtime').print_stats(50)
+
+            reduced_time = 0
+            for time in trimmed_reduced_poi_list:
+                reduced_time += time[1] - time[0]
+            print("Viewing cone stats:")
+            print("Reduced time is: {}".format(mp.nstr(reduced_time,12)))
+            print("Input   time is: {}".format(interval[1]-interval[0]))
 
         interval = TimeInterval(*interval)
         expected_accesses = interval_utils.trim_poi_segments(access_info.accesses, interval)

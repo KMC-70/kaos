@@ -71,7 +71,7 @@ class KaosTestCase(TestCase):
         access_info = section_regex.split(access_info_text)
 
         # Parse the header
-        sat_name = re.search(r'Satellite Name: ([a-zA-Z0-9]+)', access_info[1]).groups()[0]
+        sat_name = re.search(r'Satellite Name: ([a-zA-Z0-9_]+)', access_info[1]).groups()[0]
         target = [float(point) for point in
                   re.search(r'Target Point: (.*)', access_info[1]).groups()[0].split(',')]
         # Parse the access times
