@@ -63,6 +63,7 @@ def create_app(config="settings.cfg"):
     from kaos import api
     app.register_blueprint(api.history_bp)
     app.register_blueprint(api.visibility_bp)
+    app.register_blueprint(api.satellites_bp)
 
     # pylint: disable=unused-variable,missing-docstring
     @app.route('/')

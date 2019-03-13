@@ -2,3 +2,4 @@
 
 from .history import history_bp
 from .visibility import visibility_bp
+from .satellites import satellites_bp
