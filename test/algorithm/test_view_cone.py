@@ -15,7 +15,6 @@ from kaos.algorithm.coord_conversion import geod_to_geoc_lat, ecef_to_eci
 from kaos.algorithm.interpolator import Interpolator
 from .. import KaosTestCase
 
-
 @ddt
 class TestViewCone(KaosTestCase):
     """ Test cases for viewing cone algorithm"""
@@ -31,12 +30,12 @@ class TestViewCone(KaosTestCase):
         parse_ephemeris_file("ephemeris/Worldview1_32060.e")
 
     @data(
-        ('test/test_data/vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 10),
-        ('test/test_data/Aqua_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 150),
-        ('test/test_data/Rapideye2_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 10),
-        ('test/test_data/TanSuo1_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 10),
-        ('test/test_data/Terra_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 130),
-        ('test/test_data/Worldview1_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 50)
+        ('test/test_data/vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
+        ('test/test_data/Aqua_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
+        ('test/test_data/Rapideye2_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
+        ('test/test_data/TanSuo1_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
+        ('test/test_data/Terra_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
+        ('test/test_data/Worldview1_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0)
         )
     def test_reduce_poi_with_access_file(self, test_data):
         """Test reduce_poi with access file"""
@@ -52,19 +51,23 @@ class TestViewCone(KaosTestCase):
         q_mag = Satellite.get_by_name(access_info.sat_name)[0].maximum_altitude
         sat_platform_id = Satellite.get_by_name(access_info.sat_name)[0].platform_id
         sat_irp = Interpolator(sat_platform_id)
+
         poi_list = [TimeInterval(start, start + 24 * 60 * 60) for start
                     in range(interval[0], interval[1], 24 * 60 * 60)]
-        middle_time_list = [time.start + 12 * 60 * 60 for time in poi_list]
+
+        sampling_time_list = [time.start for time in poi_list]
+        sampling_time_list.append(interval[1])
+
         sat_pos_ecef_list, sat_vel_ecef_list = map(list, zip(*[sat_irp.interpolate(t) for t in
-                                                               middle_time_list]))
+                                                               sampling_time_list]))
         sat_pos_list, sat_vel_list = ecef_to_eci(np.transpose(np.asarray(sat_pos_ecef_list)),
                                                  np.transpose(np.asarray(sat_vel_ecef_list)),
-                                                 middle_time_list)
+                                                 sampling_time_list)
 
         # Run viewing cone
         reduced_poi_list = [reduced_poi for idx, poi in enumerate(poi_list) for reduced_poi in
-                            view_cone.reduce_poi(access_info.target, sat_pos_list[idx],
-                                                 sat_vel_list[idx], q_mag, poi)]
+                            view_cone.reduce_poi(access_info.target, sat_pos_list[idx:idx+2],
+                                                 sat_vel_list[idx:idx+2], q_mag, poi)]
 
         reduced_poi_list = interval_utils.fuse_neighbor_intervals(reduced_poi_list)
 
@@ -74,6 +77,7 @@ class TestViewCone(KaosTestCase):
                 (poi.start - error_threshold < access.start) and
                 (poi.end + error_threshold > access.end)),
                 trimmed_accesses)
+
         if trimmed_accesses:
             print("Remaining accesses: ", trimmed_accesses)
             raise Exception("Some accesses are not covered")

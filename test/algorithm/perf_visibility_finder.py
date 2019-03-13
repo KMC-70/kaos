@@ -25,18 +25,18 @@ class TestVisibilityFinderPerf(KaosTestCase):
     def setUpClass(cls):
         super(TestVisibilityFinderPerf, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
-        parse_ephemeris_file("ephemeris/Aqua_27424.e")
-        parse_ephemeris_file("ephemeris/Rapideye2_33312.e")
-        parse_ephemeris_file("ephemeris/TanSuo1_28220.e")
-        parse_ephemeris_file("ephemeris/Terra_25994.e")
-        parse_ephemeris_file("ephemeris/Worldview1_32060.e")
+        # parse_ephemeris_file("ephemeris/Aqua_27424.e")
+        # parse_ephemeris_file("ephemeris/Rapideye2_33312.e")
+        # parse_ephemeris_file("ephemeris/TanSuo1_28220.e")
+        # parse_ephemeris_file("ephemeris/Terra_25994.e")
+        # parse_ephemeris_file("ephemeris/Worldview1_32060.e")
 
-    @data(('test/test_data/vancouver.test', (1514764800, 1514764800 + 5 * 24 * 60 * 60)))
-    @data(('test/test_data/Aqua_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
-    @data(('test/test_data/Rapideye2_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
-    @data(('test/test_data/TanSuo1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
-    @data(('test/test_data/Terra_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
-    @data(('test/test_data/Worldview1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    @data(('test/test_data/vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    # @data(('test/test_data/Aqua_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    # @data(('test/test_data/Rapideye2_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    # @data(('test/test_data/TanSuo1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    # @data(('test/test_data/Terra_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    # @data(('test/test_data/Worldview1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
     def test_visibility_perf(self, test_data):
         """Tests that the visibility finder produces the same results as the access file and prints
         accuracy and performance measurements at the end.
@@ -51,7 +51,7 @@ class TestVisibilityFinderPerf(KaosTestCase):
         """
         # Use viewing cone algorithm or not
         use_view_cone = True
-        # Do viewing cone coordinate conversion in series or not
+        # Do viewing cone coordinate conversion in series or as a vector
         vectorized = True
 
         access_file, interval = test_data
@@ -78,19 +78,20 @@ class TestVisibilityFinderPerf(KaosTestCase):
                 poi_list = [TimeInterval(start, start + 24 * 60 * 60) for start
                             in range(interval[0], interval[1], 24 * 60 * 60)]
 
-                middle_time_list = [time.start + 12 * 60 * 60 for time in poi_list]
-                sat_pos_ecef_list, sat_vel_ecef_list = map(list, zip(*[sat_irp.interpolate(t)
-                                                                       for t in middle_time_list]))
+                sampling_time_list = [time.start for time in poi_list]
+                sampling_time_list.append(interval[1])
+                sat_pos_ecef_list, sat_vel_ecef_list = map(list, zip(*[sat_irp.interpolate(t) for
+                                                                       t in sampling_time_list]))
 
                 sat_pos_list, sat_vel_list = ecef_to_eci(
                                                 np.transpose(np.asarray(sat_pos_ecef_list)),
                                                 np.transpose(np.asarray(sat_vel_ecef_list)),
-                                                middle_time_list)
+                                                sampling_time_list)
 
                 reduced_poi_list = [reduced_poi for idx, poi in enumerate(poi_list) for reduced_poi
-                                    in view_cone.reduce_poi(access_info.target, sat_pos_list[idx],
-                                                         sat_vel_list[idx], max_q, poi)]
-
+                                    in view_cone.reduce_poi(access_info.target,
+                                                            sat_pos_list[idx:idx+2],
+                                                            sat_vel_list[idx:idx+2], max_q, poi)]
             # NON vectorized
             else:
                 reduced_poi_list = []
