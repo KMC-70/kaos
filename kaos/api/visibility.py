@@ -76,16 +76,15 @@ def request_parse_platform_id(validated_request):
     if 'PlatformID' not in validated_request.json:
         return Satellite.query.all()
 
-    sattalites = []
+    satellites = []
     for satellite in validated_request.json['PlatformID']:
         satellite = Satellite.query.get(satellite)
         if satellite is None:
             raise InputError('PlatformID', 'No such platform')
 
-        sattalites.append(satellite)
+        satellites.append(satellite)
 
-    return sattalites
-
+    return satellites
 
 
 def get_point_visibility_helper(satellite, site, poi):
@@ -138,7 +137,7 @@ def get_area_visibility():
     for satellite in satellites:
         target_visibility = {}
         for target in request.json['TargetArea']:
-            target_visibility[target] = get_point_visibility_helper(satellite, target, poi)
+            target_visibility[target[0]] = get_point_visibility_helper(satellite, target, poi)
 
         satellite_area_visibility[satellite] = \
             calculate_common_intervals(target_visibility.values())

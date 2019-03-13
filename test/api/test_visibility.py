@@ -15,7 +15,6 @@ from kaos.utils.time_conversion import utc_to_unix
 from .. import KaosTestCase
 
 
-
 @ddt
 class TestVisibilityApi(KaosTestCase):
     """Test class for the history API."""
@@ -25,6 +24,33 @@ class TestVisibilityApi(KaosTestCase):
         """Add default test responses."""
         super(TestVisibilityApi, cls).setUpClass()
         parse_ephemeris_file("ephemeris/Radarsat2.e")
+
+    def test_manual(self):
+        request = {'TargetArea': [[49.2741, -123.253],
+                                  [49.2924, -123.129],
+                                  [49.2106, -123.104],
+                                  [49.2294, -123.227],
+                                  [49.2541, -123.264]],
+                   'POI': {
+                        'startTime': '20180101T00:00:00.0',
+                        'endTime': '20180102T00:00:00.0'},
+                   'PlatformID': [1]}
+
+        with self.app.test_client() as client:
+            response = client.post('/opertunity/search', json=request)
+        """
+        request = {'Target': [49.2106, -123.104],
+                   'POI': {
+                        'startTime': '20180101T00:00:00.0',
+                        'endTime': '20180102T00:00:00.0'},
+                   'PlatformID': [1]}
+
+        with self.app.test_client() as client:
+            response = client.post('/visibility/search', json=request)
+        """
+        __import__('pdb').set_trace()
+        print response
+
 
     @data(('test/test_data/vancouver.test', ('20180101T00:00:00.0', '20180101T02:00:00.0'), 60),
           ('test/test_data/vancouver.test', ('20180104T00:00:00.0', '20180107T11:59:59.0'), 60),

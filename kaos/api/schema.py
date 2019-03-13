@@ -40,7 +40,7 @@ OPERTUNITY_SCHEMA = {
         'TargetArea': {
             'type': 'array',
             'items': {
-                'type': "array",
+                'type': 'array',
                 'minItems': 2,
                 'maxItems': 2,
             },
@@ -61,7 +61,7 @@ OPERTUNITY_SCHEMA = {
             'minItems': 1,
         },
     },
-    'required': ['Target', 'POI'],
+    'required': ['TargetArea', 'POI'],
 }
 
 SEARCH_QUERY_VALIDATOR = Draft7Validator(SEARCH_SCHEMA)
