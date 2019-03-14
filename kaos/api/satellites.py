@@ -23,7 +23,7 @@ def get_satellites():
     response = []
     satellites = Satellite.query.all()
     for satellite in satellites:
-        satellite_dict = {'id': satellite.platform_id, 'satellite_name': satellite.platform_name}
+        satellite_dict = {'id': satellite.platform_id, 'name': satellite.platform_name}
         response.append(satellite_dict)
 
     return jsonify(response)
