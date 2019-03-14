@@ -18,7 +18,6 @@ satellites_bp = Blueprint('satellites', __name__, url_prefix='/satellites')
 def get_satellites():
     """Return the satellite id and name for each record in table Satellite
     Each API call should on success return a response with a platform_id and a platform_name.
-    Querying this endpoint with this
     """
 
     response = []
@@ -26,9 +25,5 @@ def get_satellites():
     for satellite in satellites:
         satellite_dict = {'id': satellite.platform_id, 'satellite_name': satellite.platform_name}
         response.append(satellite_dict)
-    print json.dumps(response)
-
-    if response is None:
-        raise NotFoundError("No satellite found.")
 
     return jsonify(response)
