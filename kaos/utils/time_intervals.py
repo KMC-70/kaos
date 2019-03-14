@@ -116,4 +116,3 @@ def trim_poi_segments(interval_list, poi):
             ret_list.append(TimeInterval(interval.start, interval.end))
 
     return ret_list
-
