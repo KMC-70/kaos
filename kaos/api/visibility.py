@@ -143,7 +143,6 @@ def get_area_visibility():
             calculate_common_intervals(target_visibility.values())
 
 
-    __import__('pdb').set_trace()
     # Prepare the response
     response_history = ResponseHistory(response="{}")
     response_history.save()
