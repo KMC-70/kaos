@@ -70,8 +70,8 @@ def get_satellite_visibility():
         # Run viewing cone
         try:
             reduced_poi_list = [reduced_poi for idx, poi in enumerate(poi_list) for reduced_poi in
-                                reduce_poi((request.json['Target'][0],request.json['Target'][1]),
-                                           sat_position_velocity_pairs[idx:idx+2],
+                                reduce_poi((request.json['Target'][0], request.json['Target'][1]),
+                                           sat_position_velocity_pairs[idx:idx + 2],
                                            satellite.maximum_altitude, poi)]
 
             reduced_poi_list = fuse_neighbor_intervals(reduced_poi_list)
