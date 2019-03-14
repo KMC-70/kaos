@@ -4,6 +4,7 @@ from itertools import tee
 
 from ..tuples import TimeInterval
 
+
 # pylint: disable=invalid-name
 def calculate_common_intervals_helper(intervals1, intervals2):
     """Helper function to calculate_common_intervals used to calculate the intersecting intervals
@@ -115,3 +116,4 @@ def trim_poi_segments(interval_list, poi):
             ret_list.append(TimeInterval(interval.start, interval.end))
 
     return ret_list
+
