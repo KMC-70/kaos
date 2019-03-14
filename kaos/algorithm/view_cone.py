@@ -107,11 +107,12 @@ def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_max, m):
     of viewing cone with the satellite orbit.
 
     Args:
-        lat_geoc(mpf): site location in degrees at the start of POI
-        lon_geoc(mpf): site location in degrees at the start of POI
-        sat_pos(Vector3D): position of satellite (at the same time as sat_vel)
-        sat_vel(Vector3D): velocity of satellite (at the same time as sat_pos)
-        q_max(int): maximum orbital radius
+        lat_geoc (float): site location in degrees at the start of POI
+        lon_geoc (float): site location in degrees at the start of POI
+        sat_pos (Vector3D): position of satellite (at the same time as sat_vel)
+        sat_vel (Vector3D): velocity of satellite (at the same time as sat_pos)
+        q_max (float): maximum orbital radius
+        m (int): interval offsets (number of days after initial condition)
 
     Returns:
         Returns 4 numbers representing times at which the orbit is tangent to the viewing cone,
