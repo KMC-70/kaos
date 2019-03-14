@@ -336,6 +336,7 @@ class VisibilityFinder(object):
             roots = [root for root in self.find_visibility((subinterval_start, subinterval_end))
                      if root <= subinterval_end and root >= subinterval_start]
 
+            roots.sort()
             for root in roots:
                 if access_start is None:
                     access_start = root

@@ -71,7 +71,7 @@ class KaosTestCase(TestCase):
         access_info = section_regex.split(access_info_text)
 
         # Parse the header
-        sat_name = re.search(r'Satellite Name: ([a-zA-Z0-9]+)', access_info[1]).groups()[0]
+        sat_name = re.search(r'Satellite Name: ([a-zA-Z0-9_]+)', access_info[1]).groups()[0]
 
         target_point = re.search(r'Target Point: \((.*)\)', access_info[1])
         target_area = re.search(r'Target Area: (.*)', access_info[1])
@@ -98,7 +98,7 @@ class KaosTestCase(TestCase):
                     (end_time >= access_range[0] and end_time <= access_range[1]) or
                     (start_time <= access_range[0] and end_time >= access_range[0]) or
                     (end_time <= access_range[1] and end_time >= access_range[1]))):
-                accesses.append((start_time, end_time))
+                accesses.append(TimeInterval(start_time, end_time))
 
         return AccessTestInfo(sat_name, target, accesses)
     # pylint: enable=line-too-long

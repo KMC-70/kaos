@@ -88,6 +88,6 @@ class Test_eccf_to_eci(unittest.TestCase):
         Values generated using stk.
         """
         time, test_pos, test_vel, real_pos, real_vel = test_data
-        eci_pos, eci_vel = coord_conversion.ecef_to_eci(test_pos, test_vel, time)
-        self.assertEqual(real_pos, pytest.approx(eci_pos, 1))
-        self.assertEqual(real_vel, pytest.approx(eci_vel, 1))
+        pos_vel_pair = coord_conversion.ecef_to_eci(test_pos, test_vel, time)
+        self.assertEqual(real_pos, pytest.approx(pos_vel_pair[0][0], 1))
+        self.assertEqual(real_vel, pytest.approx(pos_vel_pair[0][1], 1))
