@@ -5,7 +5,7 @@ from ddt import ddt, unpack, data
 from numpy.testing import assert_array_equal
 from mpmath import mpf
 
-from kaos.utils.interval_utils import fuse_neighbor_intervals, trim_poi_segments
+from kaos.utils.time_intervals import fuse_neighbor_intervals, trim_poi_segments
 from kaos.tuples import TimeInterval
 from .. import KaosTestCase
 

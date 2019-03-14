@@ -83,15 +83,15 @@ class TestVisibilityFinderPerf(KaosTestCase):
                 sat_pos_ecef_list, sat_vel_ecef_list = map(list, zip(*[sat_irp.interpolate(t) for
                                                                        t in sampling_time_list]))
 
-                sat_pos_list, sat_vel_list = ecef_to_eci(
+                sat_position_velocity_pairs = ecef_to_eci(
                                                 np.transpose(np.asarray(sat_pos_ecef_list)),
                                                 np.transpose(np.asarray(sat_vel_ecef_list)),
                                                 sampling_time_list)
 
                 reduced_poi_list = [reduced_poi for idx, poi in enumerate(poi_list) for reduced_poi
                                     in view_cone.reduce_poi(access_info.target,
-                                                            sat_pos_list[idx:idx+2],
-                                                            sat_vel_list[idx:idx+2], max_q, poi)]
+                                                            sat_position_velocity_pairs[idx:idx+2],
+                                                            max_q, poi)]
             # NON vectorized
             else:
                 reduced_poi_list = []

@@ -38,11 +38,11 @@ def fuse_neighbor_intervals(input_list, assume_sorted=False):
         if skip_next is True:
             skip_next = False
             continue
-        if j is not None and i[1] == j[0]:
-            output_list.append(TimeInterval(i[0], j[1]))
+        if j is not None and i.end == j.start:
+            output_list.append(TimeInterval(i.start, j.end))
             skip_next = True
         else:
-            output_list.append(TimeInterval(i[0], i[1]))
+            output_list.append(TimeInterval(i.start, i.end))
 
     return output_list
 

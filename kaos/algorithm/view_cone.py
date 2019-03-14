@@ -6,40 +6,37 @@ import mpmath as mp
 from numpy import cross, asarray
 
 from .coord_conversion import geod_to_geoc_lat, geod_to_eci_geoc_lon
-from ..utils import interval_utils
-from ..constants import ANGULAR_VELOCITY_EARTH, THETA_NAUGHT, EARTH_A_AXIS, EARTH_B_AXIS
+from ..utils import time_intervals
+from ..constants import ANGULAR_VELOCITY_EARTH, EARTH_A_AXIS, EARTH_B_AXIS, THETA_NAUGHT
 from ..tuples import TimeInterval
 from ..errors import ViewConeError
 
 
-def reduce_poi(site_lat_lon, sat_pos_list, sat_vel_list, q_max, poi):
+def reduce_poi(site_lat_lon, sat_position_velocity_pairs, q_max, poi):
     """Performs a series of viewing cone calculations and shrinks the input POI
 
     Args:
-      site_lat_lon (tuple) = site's Geodetic Latitude and longitude (lat, lon)
-      sat_pos_list (Vector3D) = list of satellite positions (at arbitrary times)
-      sat_vel_list (Vector3D) = list of satellite velocity samples (at the same arbitrary times as
-                                sat_pos_list)
-      q_max (float) = maximum orbital radius
-      poi (TimeInterval) = period of interest
+        site_lat_lon (tuple): site's Geodetic Latitude and longitude (lat, lon)
+        sat_position_velocity_pairs (list of (position Vector3D, velocity Vector3D): list
+        of satellite position and velocity pairs at an arbitrary time. (see note for optimal
+        selection of pos/vel samples.)
+        q_max (float): maximum orbital radius
+        poi (TimeInterval): period of interest (see note below)
 
     Returns:
-      list of TimeIntervals that the orbit is inside viewing cone
+        list of TimeIntervals that the orbit is inside viewing cone
 
     Raises:
-      ValueError: on unexpected input
-      ViewConeError: on inconclusive result from Viewing cone
+        ValueError: on unexpected input
+        ViewConeError: on inconclusive result from Viewing cone
 
     Note: In the referenced paper, the changes in orbit plane are completely ignored for viewing
-      cone calculations. In practice, this simplification adds significant error over large POIs.
-      This error can be completely eliminated by limiting the POI duration to one day and providing
-      two samples of position/velocity (beginning and end of input time).
+        cone calculations. In practice, this simplification adds significant error over large POIs.
+        This error can be completely eliminated by limiting the POI duration to one day and
+        providing two samples of position/velocity (beginning and end of input time).
     """
     if poi.start > poi.end:
         raise ValueError("poi.start is after poi.end")
-
-    if len(sat_pos_list) != len(sat_vel_list):
-        raise ValueError("Unequal number of position and velocity samples")
 
     # Get geocentric lat/lon (in the ECI frame) at the beginning of poi
     site_geoc_lat = geod_to_geoc_lat(site_lat_lon[0])
@@ -54,7 +51,7 @@ def reduce_poi(site_lat_lon, sat_pos_list, sat_vel_list, q_max, poi):
     while m < expected_final_m:
         try:
             roots = []
-            for sat_pos, sat_vel in zip(sat_pos_list, sat_vel_list):
+            for sat_pos, sat_vel in sat_position_velocity_pairs:
                 roots.append(_view_cone_calc(site_geoc_lat, site_lon, sat_pos, sat_vel, q_max, m))
 
             # Finding roots that result in the largest interval
@@ -87,20 +84,20 @@ def reduce_poi(site_lat_lon, sat_pos_list, sat_vel_list, q_max, poi):
             raise ViewConeError("Unsupported viewing cone and orbit configuration.")
 
     # Adjusting the intervals to fit inside the input POI and return
-    return interval_utils.trim_poi_segments(interval_list, poi)
+    return time_intervals.trim_poi_segments(interval_list, poi)
 
 
 def earth_radius_at_geocetric_lat(geoc_lat):
     """Calculates Earth's radius at a particular geocentric latitude
 
     Args:
-      goc_lat (float): geocentric latitude (Rad)
+        goc_lat (float): geocentric latitude (Rad)
 
     Returns:
-      Earth's radius at the given geocentric latitude (in meters)
+        Earth's radius at the given geocentric latitude (in meters)
     """
-    return mp.sqrt(EARTH_A_AXIS ** 2 * mp.cos(geoc_lat) ** 2 +
-                   EARTH_B_AXIS ** 2 * mp.sin(geoc_lat) ** 2)
+    return EARTH_A_AXIS * EARTH_B_AXIS / mp.sqrt(EARTH_A_AXIS ** 2 * mp.sin(geoc_lat) ** 2 +
+                                                 EARTH_B_AXIS ** 2 * mp.cos(geoc_lat) ** 2)
 
 
 def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_max, m):
@@ -110,21 +107,21 @@ def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_max, m):
     of viewing cone with the satellite orbit.
 
     Args:
-      lat_geoc(mpf) = site location in degrees at the start of POI
-      lon_geoc(mpf) = site location in degrees at the start of POI
-      sat_pos(Vector3D) = position of satellite (at the same time as sat_vel)
-      sat_vel(Vector3D) = velocity of satellite (at the same time as sat_pos)
-      q_max(int) = maximum orbital radius
+        lat_geoc(mpf): site location in degrees at the start of POI
+        lon_geoc(mpf): site location in degrees at the start of POI
+        sat_pos(Vector3D): position of satellite (at the same time as sat_vel)
+        sat_vel(Vector3D): velocity of satellite (at the same time as sat_pos)
+        q_max(int): maximum orbital radius
 
     Returns:
-      Returns 4 numbers representing times at which the orbit is tangent to the viewing cone,
+        Returns 4 numbers representing times at which the orbit is tangent to the viewing cone,
 
     Raises:
-      ValueError: if any of the 4 formulas has a complex answer. This happens when the orbit and
-      viewing cone do not intersect or only intersect twice.
+        ValueError: if any of the 4 formulas has a complex answer. This happens when the orbit and
+        viewing cone do not intersect or only intersect twice.
 
     Note: With more analysis it should be possible to find a correct interval even in the case
-      where there are only two intersections but this is beyond the current scope of the project.
+        where there are only two intersections but this is beyond the current scope of the project.
     """
     lat_geoc = (lat_geoc * mp.pi) / 180
     lon_geoc = (lon_geoc * mp.pi) / 180
@@ -132,11 +129,12 @@ def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_max, m):
     # P vector (also referred  to as orbital angular momentum in the paper) calculations
     p_unit_x, p_unit_y, p_unit_z = cross(sat_pos, sat_vel) / (mp.norm(sat_pos) * mp.norm(sat_vel))
 
-    # Formulas from paper
+    # Following are equations from Viewing cone section of referenced paper
     r_site_magnitude = earth_radius_at_geocetric_lat(lat_geoc)
     gamma1 = THETA_NAUGHT + mp.asin((r_site_magnitude * mp.sin((mp.pi / 2) + THETA_NAUGHT)) / q_max)
     gamma2 = mp.pi - gamma1
 
+    # Note: atan2 instead of atan to get the correct quadrant.
     arctan_term = mp.atan2(p_unit_x, p_unit_y)
     arcsin_term_gamma, arcsin_term_gamma2 = [(mp.asin((mp.cos(gamma) - p_unit_z * mp.sin(lat_geoc))
                                              / (mp.sqrt((p_unit_x ** 2) + (p_unit_y ** 2)) *
@@ -149,7 +147,7 @@ def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_max, m):
     angles = [angle_1, angle_2, angle_3, angle_4]
 
     # Check for complex answers
-    if [x for x in angles if not isinstance(x, mp.mpf)]:
+    if any([not isinstance(angle, mp.mpf) for angle in angles]):
         raise ValueError()
 
     # Map all angles to 0 to 2*pi

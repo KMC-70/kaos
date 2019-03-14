@@ -2,8 +2,7 @@
 
 from math import sqrt, sin, cos, atan, tan
 
-from numpy import rad2deg, deg2rad, transpose
-from numpy import array as np_array
+from numpy import array, deg2rad, rad2deg, transpose
 from astropy import coordinates
 from astropy.time import Time
 from astropy import units
@@ -92,7 +91,8 @@ def geod_to_eci_geoc_lon(geod_lon, posix_time):
                           mp.mpf('280.46062'))
     site_lon = GMT_sidereal_angle + geod_lon
 
-    return mp.floor(site_lon) % 360 + (site_lon - mp.floor(site_lon))
+    # Fit the result to 0 to 360
+    return ((mp.floor(site_lon) % 360) + (site_lon - mp.floor(site_lon)))
 
 
 def lla_to_eci(lat, lon, alt, time_posix):
@@ -129,17 +129,21 @@ def lla_to_eci(lat, lon, alt, time_posix):
     return (eci_pos, eci_vel)
 
 
-def ecef_to_eci(ecef_pos_list, ecef_vel_list, posix_time_list):
-    """Converts a Cartesian vector in the ECCF to a GCRS frame at the given time.
+def ecef_to_eci(ecef_positions, ecef_velocities, posix_times):
+    """Converts one or multiple Cartesian vectors in the ECEF to a GCRS frame at the given time.
+    When converting multiple objects, each object should have a ECEF position, ECEF velocity and a
+    reference time in the same index of the appropriate input list
 
     Args:
-        ecef_pos_list (list of tuple): A tuple of the Cartesian coordinates of the object in the
-        ECCF frame (m)
-        ecef_vel_list (tuple): A tuple of the velocity of the object in the EECF frame (m/s)
-        time_posix (int): reference frame time
+        ecef_positions (list of tuples): A list of the Cartesian coordinate tuples of the objects in
+        the ECCF frame (m)
+        ecef_velocities (list of tuples): A list of the velocity tuples of the objects in the EECF
+        frame (m/s)
+        time_posix (int): A list of times to be used as reference frame time for objects
 
     Returns:
-    A tuple of lists with Vector3D(x,y,z) elements:
+    A list of tuples, each tuple has the following format:
+        (Position Vector3D(x,y,z), Velocity Vector3D(x,y,z))
         Position Vector:
             x = GCRS X-coordinate (m)
             y = GCRS Y-coordinate (m)
@@ -153,21 +157,20 @@ def ecef_to_eci(ecef_pos_list, ecef_vel_list, posix_time_list):
         Unlike the rest of the software that uses J2000 FK5, the ECI frame used here is
         GCRS; This can potentially introduce around 200m error for locations on surface of Earth.
     """
-    posix_time_list = Time(posix_time_list, format='unix')
-    cart_diff = coordinates.CartesianDifferential(ecef_vel_list, unit='m/s', copy=False)
-    cart_rep = coordinates.CartesianRepresentation(ecef_pos_list, unit='m', differentials=cart_diff,
-                                                   copy=False)
+    posix_times = Time(posix_times, format='unix')
+    cart_diff = coordinates.CartesianDifferential(ecef_velocities, unit='m/s', copy=False)
+    cart_rep = coordinates.CartesianRepresentation(ecef_positions, unit='m',
+                                                   differentials=cart_diff, copy=False)
 
-    ecef = coordinates.ITRS(cart_rep, obstime=posix_time_list)
-    gcrs = ecef.transform_to(coordinates.GCRS(obstime=posix_time_list))
+    ecef = coordinates.ITRS(cart_rep, obstime=posix_times)
+    gcrs = ecef.transform_to(coordinates.GCRS(obstime=posix_times))
 
     # pylint: disable=no-member
-    positions = np_array(transpose(gcrs.cartesian.xyz.value), ndmin=2)
-    velocities = np_array(transpose(gcrs.cartesian.differentials.values()[0].d_xyz
-                                    .to(units.m / units.s).value), ndmin=2)
+    positions = array(transpose(gcrs.cartesian.xyz.value), ndmin=2)
+    velocities = array(transpose(gcrs.cartesian.differentials.values()[0].d_xyz
+                                 .to(units.m / units.s).value), ndmin=2)
     # pylint: enable=no-member
 
-    ret_pos = [Vector3D(*pos) for pos in positions]
-    ret_vel = [Vector3D(*vel) for vel in velocities]
+    ret_pairs = [(Vector3D(*pos), Vector3D(*vel)) for pos, vel in zip(positions, velocities)]
 
-    return (ret_pos, ret_vel)
+    return ret_pairs
