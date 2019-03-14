@@ -80,7 +80,7 @@ class KaosTestCase(TestCase):
         elif target_area:
             target = []
             for target_tuple in target_area.groups()[0].split('|'):
-                target_tuple = re.sub('[ \(\)]', '', target_tuple).split(',')
+                target_tuple = re.sub(r'[ \(\)]', '', target_tuple).split(',')
                 target.append([float(point) for point in target_tuple])
         else:
             target = None

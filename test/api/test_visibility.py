@@ -17,7 +17,14 @@ from .. import KaosTestCase
 
 @ddt
 class TestVisibilityApi(KaosTestCase):
-    """Test class for the history API."""
+    """Test class for the visibility API."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Add default test responses."""
+        super(TestVisibilityApi, cls).setUpClass()
+        parse_ephemeris_file("ephemeris/Radarsat2.e")
+
     @data(('test/test_data/vancouver.test', ('20180101T00:00:00.0', '20180101T02:00:00.0'), 60),
           ('test/test_data/vancouver.test', ('20180104T00:00:00.0', '20180107T11:59:59.0'), 60),
           ('test/test_data/vancouver.test', ('20180102T00:00:00.0', '20180102T11:59:59.0'), 60))
@@ -32,8 +39,6 @@ class TestVisibilityApi(KaosTestCase):
         Note:
             Ranges provided must not start or end at an access boundary. This is a result of the
             strict checking method provided.
-        """
-        pass
         """
         access_file, interval, max_error = test_data
 
@@ -82,7 +87,6 @@ class TestVisibilityApi(KaosTestCase):
 
             if not found:
                 raise Exception('Wrong access: {}'.format(predicted_access))
-        """
 
     @file_data("test_data_visibility.json")
     def test_visibility_incorrect_input(self, Target, POI, PlatformID, Reasons):
@@ -102,9 +106,9 @@ class TestVisibilityApi(KaosTestCase):
             if reason not in response.json["reasons"]:
                 self.assertTrue(False, msg="Missing reason in response: {}".format(reason))
 
-
 @ddt
 class TestOpertunityApi(KaosTestCase):
+    """Test class for the opportunity API."""
 
     @classmethod
     def setUpClass(cls):
@@ -140,7 +144,7 @@ class TestOpertunityApi(KaosTestCase):
                    'PlatformID': [satellite_id]}
 
         with self.app.test_client() as client:
-            response = client.post('/opertunity/search', json=request)
+            response = client.post('/opportunity/search', json=request)
 
         self.assertTrue(response.is_json)
         self.assertEqual(response.status_code, 200)
@@ -176,4 +180,21 @@ class TestOpertunityApi(KaosTestCase):
             if not found:
                 raise Exception('Wrong access: {}'.format(predicted_access))
 
+    @file_data("test_data_opportunity.json")
+    def test_opportunity_incorrect_input(self, TargetArea, POI, PlatformID, Reasons):
+        request = {'TargetArea': TargetArea,
+                   'POI': POI,
+                   'PlatformID': PlatformID}
+
+        with self.app.test_client() as client:
+            response = client.post('/opportunity/search', json=request)
+
+        logging.debug("Response was: %s\nCode: %s\n", response.json, response.status)
+
+        self.assertTrue(response.is_json)
+        self.assertEqual(response.status_code, 422)
+
+        for reason in Reasons:
+            if reason not in response.json["reasons"]:
+                self.assertTrue(False, msg="Missing reason in response: {}".format(reason))
 

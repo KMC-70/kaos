@@ -32,7 +32,7 @@ SEARCH_SCHEMA = {
 }
 
 
-OPERTUNITY_SCHEMA = {
+OPPORTUNITY_SCHEMA = {
     '$schema': 'https://json-schema.org/schema#',
     'type': 'object',
     'additionalProperties': False,
@@ -41,6 +41,7 @@ OPERTUNITY_SCHEMA = {
             'type': 'array',
             'items': {
                 'type': 'array',
+                'items': {'type': 'number'},
                 'minItems': 2,
                 'maxItems': 2,
             },
@@ -57,7 +58,7 @@ OPERTUNITY_SCHEMA = {
         },
         'PlatformID': {
             'type': 'array',
-            'items': {'type': "number"},
+            'items': {'type': 'number'},
             'minItems': 1,
         },
     },
@@ -65,4 +66,4 @@ OPERTUNITY_SCHEMA = {
 }
 
 SEARCH_QUERY_VALIDATOR = Draft7Validator(SEARCH_SCHEMA)
-OPERTUNITY_QUERY_VALIDATOR = Draft7Validator(OPERTUNITY_SCHEMA)
+OPPORTUNITY_QUERY_VALIDATOR = Draft7Validator(OPPORTUNITY_SCHEMA)

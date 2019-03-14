@@ -7,7 +7,7 @@ import json
 
 from flask import Blueprint, request, jsonify
 
-from .schema import SEARCH_QUERY_VALIDATOR, OPERTUNITY_QUERY_VALIDATOR
+from .schema import SEARCH_QUERY_VALIDATOR, OPPORTUNITY_QUERY_VALIDATOR
 from .validators import validate_request_schema
 from .errors import InputError
 from ..errors import ViewConeError
@@ -22,26 +22,26 @@ from ..tuples import TimeInterval
 
 # pylint: disable=invalid-name
 visibility_bp = Blueprint('visibility', __name__, url_prefix='/visibility')
-opertunity_bp = Blueprint('opertunity', __name__, url_prefix='/opertunity')
+opportunity_bp = Blueprint('opportunity', __name__, url_prefix='/opportunity')
 # pylint: enable=invalid-name
 
 
 def request_parse_poi(validated_request):
-    """Parses the POI from a provided visibility api request.
+    """Parses the POI from a provided visibility API request.
 
     Args:
-        validated_request (obj):  A Flask request object that has been generated for a
-                                  visibility/opertunity endpoint.
+        validated_request (obj:Request):  A Flask request object that has been generated for a
+                                          visibility/opportunity endpoint.
 
-    Requieres:
+    Requires:
         The request object MUST have been validated against the requested schema and must have a
         'POI' key in its JSON payload.
 
-    Throws:
-        ValueError: If the POI is invalid. i.e. The start time is greater than the end time.
-
     Returns:
         A tuple of (start_time, end_time) where each of the two times are represented in UNIX time.
+
+    Throws:
+        ValueError: If the POI is invalid i.e. The start time is greater than the end time.
     """
     try:
         start_time = utc_to_unix(validated_request.json['POI']['startTime'])
@@ -57,20 +57,20 @@ def request_parse_poi(validated_request):
 
 
 def request_parse_platform_id(validated_request):
-    """Parses the PlatformID from a provided visibility api request.
+    """Parses the PlatformID from a provided visibility API request.
 
     Args:
-        validated_request (obj):  A Flask request object that has been generated for a
-                                  visibility/opertunity endpoint.
+        validated_request (obj:Request):  A Flask request object that has been generated for a
+                                          visibility/opportunity endpoint.
 
-    Requieres:
+    Requires:
         The request object MUST have been validated against the requested schema.
-
-    Throws:
-        InputError: If any provided platform ID(s) are invalid.
 
     Returns:
         A list of Satellite model objects.
+
+    Throws:
+        InputError: If any provided platform ID(s) are invalid.
     """
 
     if 'PlatformID' not in validated_request.json:
@@ -88,6 +88,18 @@ def request_parse_platform_id(validated_request):
 
 
 def get_point_visibility_helper(satellite, site, poi):
+    """Calculates the visibility periods associated with a single site, satellite and POI
+    combination.
+
+    Args:
+        satellite (obj:Satellite): A Satellite model object used to calculate the visibility.
+        site (tuple):              The lon/lat coordinates for the site whose visibility will be
+                                   calculated.
+        poi (obj:TimeInterval):    The period of interest for calculating visibility.
+
+    Returns:
+        A list of visibility periods/access times in the POI.
+    """
     start_time, end_time = poi
     # Due to limitations of the accuracy of the view cone calculations the POI must be split into in
     # intervals of 3600 seconds
@@ -95,7 +107,7 @@ def get_point_visibility_helper(satellite, site, poi):
                 for poi_start in xrange(start_time, end_time, 86400)]
 
     reduced_poi_list = poi_list
-    # TODO Uncomment when the viecone fix is merged
+    # TODO Uncomment when the view cone fix is merged
     """
     interpolator = Interpolator(satellite.platform_id)
     for poi in poi_list:
@@ -125,11 +137,14 @@ def get_point_visibility_helper(satellite, site, poi):
     return visibility_periods
 
 
-@opertunity_bp.route('/search', methods=['POST'])
-@validate_request_schema(OPERTUNITY_QUERY_VALIDATOR)
+@opportunity_bp.route('/search', methods=['POST'])
+@validate_request_schema(OPPORTUNITY_QUERY_VALIDATOR)
 def get_area_visibility():
-    """Stuff"""
+    """Calculate the visibility of an area by any number of specified satellites.
 
+    Requires:
+        A user request that contains a JSON payload which follows the OPPORTUNITY_SCHEMA.
+    """
     satellites = request_parse_platform_id(request)
     poi = request_parse_poi(request)
 
@@ -141,7 +156,6 @@ def get_area_visibility():
 
         satellite_area_visibility[satellite] = \
             calculate_common_intervals(target_visibility.values())
-
 
     # Prepare the response
     response_history = ResponseHistory(response="{}")
