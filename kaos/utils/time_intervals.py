@@ -22,7 +22,6 @@ def fuse_neighbor_intervals(input_list, assume_sorted=False):
     Assumptions:
         Intervals don't overlaps.
         Maximum of 2 intervals share any one border.
-        For any interval, there is maximum of one neighbor.
 
     Args:
         input_list (list of TimeInterval): list of time intervals to be fused.
@@ -33,16 +32,24 @@ def fuse_neighbor_intervals(input_list, assume_sorted=False):
         input_list.sort(key=lambda x: x.start)
 
     output_list = []
-    skip_next = False
+    fused_interval_start = None
     for i, j in pairwise(input_list):
-        if skip_next is True:
-            skip_next = False
-            continue
+
         if j is not None and i.end == j.start:
-            output_list.append(TimeInterval(i.start, j.end))
-            skip_next = True
+            # We are in a fuse-able interval
+            if fused_interval_start is None:
+                # Update the start only at the beginning
+                fused_interval_start = i.start
+
         else:
-            output_list.append(TimeInterval(i.start, i.end))
+            # We are not in a fuse-able interval
+            if fused_interval_start is not None:
+                # Append the fused interval if we just exited a fuse-able interval
+                output_list.append(TimeInterval(fused_interval_start, i.end))
+                fused_interval_start = None
+            else:
+                # No neighbor case, just append
+                output_list.append(TimeInterval(i.start, i.end))
 
     return output_list
 
