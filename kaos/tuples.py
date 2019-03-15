@@ -21,6 +21,12 @@ class TimeInterval(namedtuple('TimeInterval', 'start, end')):
     def __str__(self):
         return 'TimeInterval: start={}, end={}'.format(self.start, self.end)
 
+    def intersection(self, other):
+        if (other.start > self.end) or (other.end < self.start):
+            return None
+
+        return TimeInterval(max(self.start, other.start), min(self.end, other.end))
+
 
 class OrbitPoint(namedtuple('OrbitPoint', 'time, pos, vel')):
     """Orbit information for a given point in time."""
