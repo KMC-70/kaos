@@ -16,9 +16,9 @@ class TestSatellitesApi(KaosTestCase):
         parse_ephemeris_file("ephemeris/Aqua_27424.e")
         parse_ephemeris_file("ephemeris/Radarsat2.e")
         parse_ephemeris_file("ephemeris/Rapideye2_33312.e")
-        cls.response_data = '[{"id": 1, "satellite_name": "Aqua_27424"}, ' \
-                             '{"id": 2, "satellite_name": "Radarsat2"}, ' \
-                             '{"id": 3, "satellite_name": "Rapideye2_33312"}]'
+        cls.response_data = '[{"id": 1, "name": "Aqua_27424"}, ' \
+                             '{"id": 2, "name": "Radarsat2"}, ' \
+                             '{"id": 3, "name": "Rapideye2_33312"}]'
 
 
     def test_get_response_correct(self):
@@ -27,8 +27,10 @@ class TestSatellitesApi(KaosTestCase):
         with self.app.test_client() as client:
             response = client.get('/satellites')
             self.assertEqual(response.status_code, 200, "Got unexpected status code")
+            # import pdb; pdb.set_trace()
             self.assertEqual(json.dumps(response.json), self.response_data,
                              "Got unexpected response data")
+
 
     def test_get_response_wrong_spelling(self):
         """Test that an invalid id type request will return the inappropriate error."""
