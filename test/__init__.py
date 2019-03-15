@@ -53,7 +53,7 @@ class KaosTestCase(TestCase):
 
             ====================================================================================================
             Satellite Name: <Sat Name>
-            Target Point: <lon>, <lat>
+            Target [Point/Area]: (<lon>, <lat>) , [.*]
             ====================================================================================================
             record number, access start, access_end, access_duration
             ....
@@ -72,8 +72,19 @@ class KaosTestCase(TestCase):
 
         # Parse the header
         sat_name = re.search(r'Satellite Name: ([a-zA-Z0-9_]+)', access_info[1]).groups()[0]
-        target = [float(point) for point in
-                  re.search(r'Target Point: (.*)', access_info[1]).groups()[0].split(',')]
+
+        target_point = re.search(r'Target Point: \((.*)\)', access_info[1])
+        target_area = re.search(r'Target Area: (.*)', access_info[1])
+        if target_point:
+            target = [float(point) for point in target_point.groups()[0].split(',')]
+        elif target_area:
+            target = []
+            for target_tuple in target_area.groups()[0].split('|'):
+                target_tuple = re.sub(r'[ \(\)]', '', target_tuple).split(',')
+                target.append([float(point) for point in target_tuple])
+        else:
+            target = None
+
         # Parse the access times
         accesses = []
         raw_access_data = access_info[2].splitlines()
