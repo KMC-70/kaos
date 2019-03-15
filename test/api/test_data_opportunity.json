@@ -1,0 +1,116 @@
+{
+    "incorrect_type_start_time": {
+        "TargetArea": [[1, 2], [1, 2], [1, 2]],
+        "POI": {
+            "startTime": 1009090,
+            "endTime": "100"
+        },
+        "PlatformID": [0],
+        "Reasons": [ "POI" ]
+    },
+    "incorrect_type_end_time": {
+        "TargetArea": [[1, 2], [1, 2], [1, 2]],
+        "POI": {
+            "startTime": "1009090",
+            "endTime": 100
+        },
+        "PlatformID": [0],
+        "Reasons": [ "POI" ]
+    },
+    "incorrect_type_poi": {
+        "TargetArea": [[1,2], [1,2], [1,2]],
+        "POI": 1,
+        "PlatformID": [0],
+        "Reasons": [ "POI" ]
+    },
+    "incorrect_type_target_area_1": {
+        "TargetArea": [1, 2, 3],
+        "POI": {
+            "startTime": "1009090",
+            "endTime": "100"
+        },
+        "PlatformID": [0],
+        "Reasons": [ "TargetArea" ]
+    },
+    "incorrect_type_target_area_2": {
+        "TargetArea": "WOW",
+        "POI": {
+            "startTime": "1009090",
+            "endTime": "100"
+        },
+        "PlatformID": [0],
+        "Reasons": [ "TargetArea" ]
+    },
+    "incorrect_type_target_area_3": {
+        "TargetArea": [[1,2], [1, 2], [1]],
+        "POI": {
+            "startTime": "1009090",
+            "endTime": "100"
+        },
+        "PlatformID": [0],
+        "Reasons": [ "TargetArea" ]
+    },
+    "incorrect_type_target_area_4": {
+        "TargetArea": [[1,2], [1, 2], [1, 2, 3]],
+        "POI": {
+            "startTime": "1009090",
+            "endTime": "100"
+        },
+        "PlatformID": [0],
+        "Reasons": [ "TargetArea" ]
+    },
+    "incorrect_type_target_area_5": {
+        "TargetArea": [[1,2], ["ls", "-la"], ["OK", "HELLO"]],
+        "POI": {
+            "startTime": "1009090",
+            "endTime": "100"
+        },
+        "PlatformID": [1],
+        "Reasons": [ "TargetArea" ]
+    },
+    "incorrect_type_target_area_6": {
+        "TargetArea": [[1,2,3]],
+        "POI": {
+            "startTime": "1009090",
+            "endTime": "100"
+        },
+        "PlatformID": [0],
+        "Reasons": [ "TargetArea" ]
+    },
+    "incorrect_type_platform_1": {
+        "TargetArea": [[1,2], [1,2], [1,2]],
+        "POI": {
+            "startTime": "20180101T00:00:00.0",
+            "endTime": "20180101T00:00:00.0"
+        },
+        "PlatformID": ["Hello"],
+        "Reasons": [ "PlatformID" ]
+    },
+    "incorrect_type_platform_2": {
+        "TargetArea": [[1,2], [1,2], [1,2]],
+        "POI": {
+            "startTime": "20180101T00:00:00.0",
+            "endTime": "20180101T00:00:00.0"
+        },
+        "PlatformID": "Hello",
+        "Reasons": [ "PlatformID" ]
+    },
+    "incorrect_value_platform_id": {
+        "TargetArea": [[1,2], [1,2], [1,2]],
+        "POI": {
+            "startTime": "20180101T00:00:00.0",
+            "endTime": "20180101T00:00:00.0"
+        },
+        "PlatformID": [100],
+        "Reasons": [ "PlatformID" ]
+    },
+    "incorrect_value_poi": {
+        "TargetArea": [[1,2], [1,2], [1,2]],
+        "POI": {
+            "startTime": "1009090",
+            "endTime": "100"
+        },
+        "PlatformID": [1],
+        "Reasons": [ "POI" ]
+    }
+}
