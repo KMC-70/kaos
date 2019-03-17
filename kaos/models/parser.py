@@ -9,7 +9,6 @@ from kaos.utils.time_conversion import jdate_to_unix
 from kaos.tuples import OrbitPoint
 from kaos.models import DB, Satellite, OrbitSegment, OrbitRecord
 
-
 def add_segment_to_db(orbit_data, satellite_id):
     """Add the given segment to the database.  We create a new entry in the Segment DB that holds i
     - segment_id
@@ -20,10 +19,14 @@ def add_segment_to_db(orbit_data, satellite_id):
     This segment element is also used to index a group of rows in the Orbits DB. This lets us know
     that the orbit data belongs to a given segment. This is because we cannot perform interpolation
     using points in different segments.
+
+    Returns:
+        -1              on error.
+        satellite_id    on success.
     """
 
     if satellite_id < 0:
-        return
+        return -1
 
     segment_start = orbit_data[0].time
     segment_end = orbit_data[-1].time
@@ -38,7 +41,7 @@ def add_segment_to_db(orbit_data, satellite_id):
                                       and_((segment_start == OrbitSegment.start_time),
                                            (segment_end == OrbitSegment.end_time))))
                           .all()):
-        return
+        return -1
 
     # Create segment entry. Retrieve segment ID and insert it along with data into Orbit db
     segment = OrbitSegment(platform_id=satellite_id, start_time=segment_start,
@@ -53,6 +56,7 @@ def add_segment_to_db(orbit_data, satellite_id):
         orbit_record.save()
 
     DB.session.commit()
+    return satellite_id
 
 
 def parse_ephemeris_file(filename):
@@ -69,6 +73,7 @@ def parse_ephemeris_file(filename):
     DB.session.commit()
 
     max_distance = 0
+    sat_id = -1
 
     with open(filename, "rU") as f:
         segment_boundaries = []
@@ -127,7 +132,7 @@ def parse_ephemeris_file(filename):
                     if (orbit_tuple.time in segment_boundaries and
                             last_seen_segment_boundary != orbit_tuple.time):
                         last_seen_segment_boundary = orbit_tuple.time
-                        add_segment_to_db(segment_tuples, sat.platform_id)
+                        sat_id = add_segment_to_db(segment_tuples, sat.platform_id)
                         segment_tuples = []
 
             if "EphemerisTimePosVel" in line:
@@ -137,4 +142,4 @@ def parse_ephemeris_file(filename):
             sat.maximum_altitude = max_distance
             sat.save()
         DB.session.commit()
-        return sat.platform_id
+        return sat_id
