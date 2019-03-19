@@ -2,30 +2,35 @@
 
 Author: Team KMC-70.
 """
-import json, os
+import json
+import os
 from flask import Flask, Blueprint, request, render_template, jsonify
 from werkzeug.utils import secure_filename
-
 from kaos.models import ResponseHistory
 from kaos.models.parser import parse_ephemeris_file
 from .errors import InputError
 
+
 app = Flask(__name__)
 app.config['UPLOAD_DIRECTORY'] = "ephemeris"
+
 
 # pylint: disable=invalid-name
 upload_bp = Blueprint('upload', __name__, url_prefix='/upload')
 # pylint: enable=invalid-name
 
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() == 'e'
 
+
 @upload_bp.route('')
 def render_upload():
-   return render_template("upload.html")
+    return render_template("upload.html")
 
-@upload_bp.route('/uploader', methods = ['GET', 'POST'])
+
+@upload_bp.route('/uploader', methods=['GET', 'POST'])
 def upload_file():
     """ Upload ephemeris files via POST requests.
 

@@ -9,6 +9,7 @@ from kaos.utils.time_conversion import jdate_to_unix
 from kaos.tuples import OrbitPoint
 from kaos.models import DB, Satellite, OrbitSegment, OrbitRecord
 
+
 def add_segment_to_db(orbit_data, satellite_id):
     """Add the given segment to the database.  We create a new entry in the Segment DB that holds i
     - segment_id
