@@ -69,6 +69,7 @@ def create_app(config="settings.cfg"):
     app.register_blueprint(api.history_bp)
     app.register_blueprint(api.visibility_bp)
     app.register_blueprint(api.satellites_bp)
+    app.register_blueprint(api.upload_bp)
     app.register_blueprint(api.opportunity_bp)
 
     # pylint: disable=unused-variable,missing-docstring

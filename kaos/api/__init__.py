@@ -2,4 +2,5 @@
 
 from .history import history_bp
 from .satellites import satellites_bp
+from .upload import upload_bp
 from .visibility import visibility_bp, opportunity_bp
