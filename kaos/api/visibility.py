@@ -6,13 +6,14 @@ Author: Team KMC-70.
 import json
 
 from flask import Blueprint, request, jsonify
+import numpy as np
 
 from .schema import SEARCH_QUERY_VALIDATOR, OPPORTUNITY_QUERY_VALIDATOR
 from .validators import validate_request_schema
 from .errors import InputError
 from ..errors import ViewConeError
 from ..utils.time_conversion import utc_to_unix
-from ..utils.time_intervals import calculate_common_intervals
+from ..utils.time_intervals import calculate_common_intervals, fuse_neighbor_intervals
 from ..models import DB, Satellite, ResponseHistory
 from ..algorithm.interpolator import Interpolator
 from ..algorithm.coord_conversion import lla_to_eci, lla_to_ecef, ecef_to_eci
@@ -102,32 +103,36 @@ def get_point_visibility_helper(satellite, site, poi):
     """
     start_time, end_time = poi
     # Due to limitations of the accuracy of the view cone calculations the POI must be split into in
-    # intervals of 3600 seconds
+    # intervals of one day
     poi_list = [TimeInterval(poi_start, min(poi_start + 86400, end_time))
                 for poi_start in xrange(start_time, end_time, 86400)]
 
-    reduced_poi_list = poi_list
-    # TODO Uncomment when the view cone fix is merged
-    """
     interpolator = Interpolator(satellite.platform_id)
-    for poi in poi_list:
-        site_pos_eci, site_pos_eci = lla_to_eci(site[0], site[1], 0, poi.start)
-        try:
-            sat_pos_ecef, sat_vel_ecef = interpolator.interpolate(poi.start)
-        except ValueError:
-            raise InputError('Platform',
-                             'No satellite data at {}'.format(poi))
 
-        # Since the viewing cone only works with eci coordinates, the sat coordinates must be
-        # converted
-        sat_pos_eci, sat_vel_eci = ecef_to_eci(sat_pos_ecef, sat_vel_ecef, poi.start)
+    # Gather data for every 24 hour period of the input interval
+    sampling_time_list = [time.start for time in poi_list]
+    sampling_time_list.append(end_time)
 
-        try:
-            reduced_poi_list.extend(reduce_poi(site_pos_eci, sat_pos_eci, sat_vel_eci,
-                                               satellite.maximum_altitude, poi))
-        except ViewConeError:
-            reduced_poi_list.append(poi)
-        """
+    sat_ecef_positions, sat_ecef_velocities = map(list, zip(*[interpolator.interpolate(t) for t
+                                                              in sampling_time_list]))
+
+    # Since the viewing cone only works with ECI coordinates, the sat coordinates must be
+    # converted
+    sat_position_velocity_pairs = ecef_to_eci(np.transpose(np.asarray(sat_ecef_positions)),
+                                             np.transpose(np.asarray(sat_ecef_velocities)),
+                                             sampling_time_list)
+
+    # Run viewing cone
+    try:
+        reduced_poi_list = [reduced_poi for idx, this_poi in enumerate(poi_list) for reduced_poi in
+                            reduce_poi(site, sat_position_velocity_pairs[idx:idx + 2],
+                                       satellite.maximum_altitude, this_poi)]
+
+        reduced_poi_list = fuse_neighbor_intervals(reduced_poi_list)
+
+    except ViewConeError:
+        reduced_poi_list = [TimeInterval(start_time, end_time)]
+
     # Now that the POI has been reduced manageable chunks, the visibility can be computed
     visibility_periods = []
     for reduced_poi in reduced_poi_list:

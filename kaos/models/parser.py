@@ -20,10 +20,14 @@ def add_segment_to_db(orbit_data, satellite_id):
     This segment element is also used to index a group of rows in the Orbits DB. This lets us know
     that the orbit data belongs to a given segment. This is because we cannot perform interpolation
     using points in different segments.
+
+    Returns:
+        -1              on error.
+        satellite_id    on success.
     """
 
     if satellite_id < 0:
-        return
+        return -1
 
     segment_start = orbit_data[0].time
     segment_end = orbit_data[-1].time
@@ -38,7 +42,7 @@ def add_segment_to_db(orbit_data, satellite_id):
                                       and_((segment_start == OrbitSegment.start_time),
                                            (segment_end == OrbitSegment.end_time))))
                           .all()):
-        return
+        return -1
 
     # Create segment entry. Retrieve segment ID and insert it along with data into Orbit db
     segment = OrbitSegment(platform_id=satellite_id, start_time=segment_start,
@@ -53,6 +57,7 @@ def add_segment_to_db(orbit_data, satellite_id):
         orbit_record.save()
 
     DB.session.commit()
+    return satellite_id
 
 
 def parse_ephemeris_file(filename):
@@ -64,9 +69,15 @@ def parse_ephemeris_file(filename):
     Calculate the maximum distance from earth center to the position if the satellite. Insert it
     in Satellite.
     """
-    sat = Satellite(platform_name=os.path.splitext(os.path.basename(filename))[0])
-    sat.save()
-    DB.session.commit()
+    sat_name = os.path.splitext(os.path.basename(filename))[0].split('.')[0]
+    existing_sat = Satellite.get_by_name(sat_name)
+    if not existing_sat:
+        sat = Satellite(platform_name=sat_name)
+        sat.save()
+        DB.session.commit()
+        sat_id = -1
+    else:
+        sat = existing_sat[0]
 
     max_distance = 0
 
@@ -127,7 +138,7 @@ def parse_ephemeris_file(filename):
                     if (orbit_tuple.time in segment_boundaries and
                             last_seen_segment_boundary != orbit_tuple.time):
                         last_seen_segment_boundary = orbit_tuple.time
-                        add_segment_to_db(segment_tuples, sat.platform_id)
+                        sat_id = add_segment_to_db(segment_tuples, sat.platform_id)
                         segment_tuples = []
 
             if "EphemerisTimePosVel" in line:
@@ -137,3 +148,4 @@ def parse_ephemeris_file(filename):
             sat.maximum_altitude = max_distance
             sat.save()
         DB.session.commit()
+        return sat_id
