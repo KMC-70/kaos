@@ -128,23 +128,25 @@ def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_max, m):
     lon_geoc = (lon_geoc * np.pi) / 180
 
     # P vector (also referred  to as orbital angular momentum in the paper) calculations
-    p_unit_x, p_unit_y, p_unit_z = cross(sat_pos, sat_vel) / (np.linalg.norm(sat_pos) * np.linalg.norm(sat_vel))
+    p_unit_x, p_unit_y, p_unit_z = (cross(sat_pos, sat_vel) / (np.linalg.norm(sat_pos) *
+                                    np.linalg.norm(sat_vel)))
 
     # Following are equations from Viewing cone section of referenced paper
     r_site_magnitude = earth_radius_at_geocetric_lat(lat_geoc)
-    gamma1 = THETA_NAUGHT + np.arcsin((r_site_magnitude * np.sin((np.pi / 2) + THETA_NAUGHT)) / q_max)
+    gamma1 = THETA_NAUGHT + np.arcsin((r_site_magnitude * np.sin((np.pi / 2) + THETA_NAUGHT))
+                                      / q_max)
     gamma2 = np.pi - gamma1
 
     # Note: atan2 instead of atan to get the correct quadrant.
     arctan_term = np.arctan2(p_unit_x, p_unit_y)
-    arcsin_term_gamma, arcsin_term_gamma2 = [(np.arcsin((np.cos(gamma) - p_unit_z * np.sin(lat_geoc))
+    arcsin_term1, arcsin_term2 = [(np.arcsin((np.cos(gamma) - p_unit_z * np.sin(lat_geoc))
                                              / (np.sqrt((p_unit_x ** 2) + (p_unit_y ** 2)) *
                                               np.cos(lat_geoc)))) for gamma in [gamma1, gamma2]]
 
-    angle_1 = (arcsin_term_gamma - lon_geoc - arctan_term + 2 * np.pi * m)
-    angle_2 = (np.pi - arcsin_term_gamma - lon_geoc - arctan_term + 2 * np.pi * m)
-    angle_3 = (arcsin_term_gamma2 - lon_geoc - arctan_term + 2 * np.pi * m)
-    angle_4 = (np.pi - arcsin_term_gamma2 - lon_geoc - arctan_term + 2 * np.pi * m)
+    angle_1 = (arcsin_term1 - lon_geoc - arctan_term + 2 * np.pi * m)
+    angle_2 = (np.pi - arcsin_term1 - lon_geoc - arctan_term + 2 * np.pi * m)
+    angle_3 = (arcsin_term2 - lon_geoc - arctan_term + 2 * np.pi * m)
+    angle_4 = (np.pi - arcsin_term2 - lon_geoc - arctan_term + 2 * np.pi * m)
     angles = [angle_1, angle_2, angle_3, angle_4]
 
     # Check for complex answers

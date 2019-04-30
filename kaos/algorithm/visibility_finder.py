@@ -30,7 +30,7 @@ class VisibilityFinder(object):
         """
         self.satellite_id = satellite_id
         self.site_ecef = lla_to_ecef(site[0], site[1], 0)
-        self.interval = (0, interval[1]-interval[0])
+        self.interval = (0, interval[1] - interval[0])
         self.start_of_interval = interval[0]
 
         self.sat_irp = Interpolator(satellite_id)
@@ -100,11 +100,11 @@ class VisibilityFinder(object):
         site_normal_vel = [0, 0, 0]
 
         first_term = ((1.0 / np.linalg.norm(pos_diff)) *
-                         (np.dot(vel_diff, site_normal_pos) +
-                          np.dot(pos_diff, site_normal_vel)))
+                      (np.dot(vel_diff, site_normal_pos) +
+                       np.dot(pos_diff, site_normal_vel)))
 
         second_term = ((1.0 / np.power((np.linalg.norm(pos_diff)), 3)) *
-                              np.dot(pos_diff, vel_diff) * np.dot(pos_diff, site_normal_pos))
+                       np.dot(pos_diff, vel_diff) * np.dot(pos_diff, site_normal_pos))
 
         return first_term - second_term
 
@@ -145,19 +145,19 @@ class VisibilityFinder(object):
 
         # Calculating the a5 and a4 constants used in the approximation
         a5 = ((((24.0 / (interval_length ** 5.0)) * (visibility_start - visibility_end)) +
-                 ((4.0 / (interval_length ** 4.0)) *
-                  (visibility_d_start + (4.0 * visibility_d_mid) + visibility_d_end))))
+              ((4.0 / (interval_length ** 4.0)) *
+              (visibility_d_start + (4.0 * visibility_d_mid) + visibility_d_end))))
 
         # Since a4's computation is complex, it was split into several parts
         a4_first_term = (((4.0 / (interval_length ** 4.0)) *
-                                (visibility_start + (4.0 * visibility_mid) + visibility_end)))
+                         (visibility_start + (4.0 * visibility_mid) + visibility_end)))
         a4_second_term = (((4.0 / (interval_length ** 4.0)) *
-                                 ((visibility_d_start * ((2.0 * start_time) + (3.0 * end_time))) +
-                                  ((10.0 * visibility_d_mid) * (start_time + end_time)) +
-                                  (visibility_d_end * ((3.0 * start_time) + (2.0 * end_time))))))
+                          ((visibility_d_start * ((2.0 * start_time) + (3.0 * end_time))) +
+                          ((10.0 * visibility_d_mid) * (start_time + end_time)) +
+                          (visibility_d_end * ((3.0 * start_time) + (2.0 * end_time))))))
         a4_third_term = (((24.0 / (interval_length ** 5.0)) *
-                                ((visibility_start * ((2.0 * start_time) + (3.0 * end_time))) -
-                                 (visibility_end * ((3.0 * start_time) + (2.0 * end_time))))))
+                         ((visibility_start * ((2.0 * start_time) + (3.0 * end_time))) -
+                          (visibility_end * ((3.0 * start_time) + (2.0 * end_time))))))
 
         a4 = a4_first_term - a4_second_term - a4_third_term
 
@@ -200,10 +200,11 @@ class VisibilityFinder(object):
         """
         start_time, end_time = time_interval
         time_step = (end_time - start_time)
-        visibility_start = (self.visibility(start_time + self.start_of_interval))
-        visibility_end = (self.visibility(end_time + self.start_of_interval))
-        visibility_first_start = (self.visibility_first_derivative(start_time + self.start_of_interval))
-        visibility_first_end = (self.visibility_first_derivative(end_time + self.start_of_interval))
+        visibility_start = self.visibility(start_time + self.start_of_interval)
+        visibility_end = self.visibility(end_time + self.start_of_interval)
+        visibility_first_start = self.visibility_first_derivative(start_time +
+                                                                  self.start_of_interval)
+        visibility_first_end = self.visibility_first_derivative(end_time + self.start_of_interval)
 
         const = (((-2 * (start_time ** 3) * visibility_start) / (time_step ** 3)) +
                  ((2 * (start_time ** 3) * visibility_end) / (time_step ** 3)) +
@@ -333,7 +334,8 @@ class VisibilityFinder(object):
                 if access_start is None:
                     access_start = root
                 else:
-                    sat_accesses.append(TimeInterval(access_start + self.start_of_interval, root + self.start_of_interval))
+                    sat_accesses.append(TimeInterval(access_start + self.start_of_interval,
+                                                     root + self.start_of_interval))
                     access_start = None
 
             # Set the start time and time step for the next interval
@@ -344,10 +346,13 @@ class VisibilityFinder(object):
         # still be visible at the end of the period.
         # NOTE: subinterval_end would also work here but is difficult to test.
         if (access_start is not None) and (access_start < end_time):
-            if self.visibility(end_time) <= 0:
+            if self.visibility(end_time + self.start_of_interval) <= 0:
                 raise VisibilityFinderError("Visibility interval started at {} "
-                                            "but did not end at {}".format(access_start, end_time))
-            sat_accesses.append(TimeInterval(access_start, end_time))
+                                            "but did not end at {}".format(
+                                                access_start + self.start_of_interval,
+                                                + self.start_of_intervalend_time))
+            sat_accesses.append(TimeInterval(access_start + self.start_of_interval,
+                                             end_time + self.start_of_interval))
 
         # TODO: switch this to log
         # print("Average step length in seconds: {}".format((end_time - start_time) / interval_num))
@@ -366,7 +371,8 @@ class VisibilityFinder(object):
             The subintervals over which the site is visible.
         """
 
-        start_time, end_time = self.interval[0] + self.start_of_interval, self.interval[1] + self.start_of_interval
+        start_time = self.interval[0] + self.start_of_interval
+        end_time = self.interval[1] + self.start_of_interval
         sat_accesses = []
         access_start = None
         for time in range(start_time, end_time, step):
