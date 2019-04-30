@@ -1,12 +1,12 @@
 """This file contains functions to convert between LLA, ECI, ECEF coordinate systems."""
 
 from math import sqrt, sin, cos, atan, tan
-
+import numpy as np
 from numpy import array, deg2rad, rad2deg, transpose
 from astropy import coordinates
 from astropy.time import Time
 from astropy import units
-import mpmath as mp
+
 
 from ..constants import ELLIPSOID_A, ELLIPSOID_E, J2000, SECONDS_PER_DAY
 from ..tuples import Vector3D
@@ -87,12 +87,11 @@ def geod_to_eci_geoc_lon(geod_lon, posix_time):
         Based on section 6 of "Changing Coordinates in the Context of Orbital Mechanics"
         available at https://apps.dtic.mil/dtic/tr/fulltext/u2/1027338.pdf
     """
-    GMT_sidereal_angle = ((posix_time - mp.mpf(J2000)) * (360 / SECONDS_PER_DAY) +
-                          mp.mpf('280.46062'))
+    GMT_sidereal_angle = ((posix_time - J2000) * (360 / SECONDS_PER_DAY) + 280.46062)
     site_lon = GMT_sidereal_angle + geod_lon
 
     # Fit the result to 0 to 360
-    return ((mp.floor(site_lon) % 360) + (site_lon - mp.floor(site_lon)))
+    return ((np.floor(site_lon) % 360) + (site_lon - np.floor(site_lon)))
 
 
 def lla_to_eci(lat, lon, alt, time_posix):

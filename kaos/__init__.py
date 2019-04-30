@@ -11,7 +11,6 @@ from time import gmtime, strftime
 
 from flask import Flask, jsonify
 from flask_cors import CORS
-from mpmath import mp
 
 from kaos.api.errors import APIError
 
@@ -26,10 +25,6 @@ def create_app(config="settings.cfg"):
     # Set up CORS header to allow cross-origin requests
     CORS(app)
     app.config['CORS_HEADERS'] = 'Content-Type'
-
-    # In order for visibility computations to be accurate a high degree of precision is required.
-    # Hence, the mpmath library is configured to use 100 decimal point precision.
-    mp.dps = app.config.get('CALCULATION_PRECISION', 100)
 
     # Configure Logging
     logging_level = app.config.get('LOGGING_LEVEL', 'INFO').upper()

@@ -9,7 +9,6 @@ These computations are based on a paper by Chao Han, Xiaojie Gao and Xiucong Sun
 from __future__ import division
 
 import numpy as np
-import mpmath as mp
 
 from .cubic_equation_solver import solve
 from .coord_conversion import lla_to_ecef
@@ -31,7 +30,8 @@ class VisibilityFinder(object):
         """
         self.satellite_id = satellite_id
         self.site_ecef = lla_to_ecef(site[0], site[1], 0)
-        self.interval = interval
+        self.interval = (0, interval[1]-interval[0])
+        self.start_of_interval = interval[0]
 
         self.sat_irp = Interpolator(satellite_id)
 
@@ -57,7 +57,7 @@ class VisibilityFinder(object):
 
         profile.disable()
         stats = pstats.Stats(profile, stream=sys.stdout)
-        stats.strip_dirs().sort_stats('tottime').print_stats(50)
+        stats.strip_dirs().sort_stats('cumtime').print_stats(50)
 
         return retval
 
@@ -73,16 +73,12 @@ class VisibilityFinder(object):
         Note:
             This function assumes the FOV of the sensors on the satellite are 180 degrees
         """
-
-        # Since most helper functions don't play well with mpmath floats we have to perform a lossy
-        # conversion.
-        posix_time = float(posix_time)
-        site_pos = np.array(self.site_ecef) * mp.mpf(1.0)
-        site_normal_pos = site_pos / mp.norm(site_pos)
+        site_pos = np.array(self.site_ecef)
+        site_normal_pos = site_pos / np.linalg.norm(site_pos)
         sat_pos = self.sat_irp.interpolate(posix_time)[0]
         sat_site = np.subtract(sat_pos, site_pos)
 
-        return mp.mpf(mp.fdot(sat_site, site_normal_pos) / mp.norm(sat_site))
+        return (np.dot(sat_site, site_normal_pos) / np.linalg.norm(sat_site))
 
     def visibility_first_derivative(self, posix_time):
         """Calculate the derivative of the visibility function of the satellite and the site at a
@@ -94,25 +90,21 @@ class VisibilityFinder(object):
         Returns:
             The value of the visibility function evaluated at the provided time.
         """
-
-        # Since most helper functions don't play well with mpmath floats we have to perform a lossy
-        # conversion.
-        posix_time = float(posix_time)
-        sat_pos_vel = np.array(self.sat_irp.interpolate(posix_time)) * mp.mpf(1.0)
-        site_pos = np.array(self.site_ecef) * mp.mpf(1.0)
+        sat_pos_vel = np.array(self.sat_irp.interpolate(posix_time))
+        site_pos = np.array(self.site_ecef)
 
         pos_diff = np.subtract(sat_pos_vel[0], site_pos)
         vel_diff = sat_pos_vel[1]
 
-        site_normal_pos = site_pos / mp.norm(site_pos)
+        site_normal_pos = site_pos / np.linalg.norm(site_pos)
         site_normal_vel = [0, 0, 0]
 
-        first_term = mp.mpf(((1.0 / mp.norm(pos_diff)) *
-                             (mp.fdot(vel_diff, site_normal_pos) +
-                              mp.fdot(pos_diff, site_normal_vel))))
+        first_term = ((1.0 / np.linalg.norm(pos_diff)) *
+                         (np.dot(vel_diff, site_normal_pos) +
+                          np.dot(pos_diff, site_normal_vel)))
 
-        second_term = mp.mpf(((1.0 / mp.power((mp.norm(pos_diff)), 3)) *
-                              mp.fdot(pos_diff, vel_diff) * mp.fdot(pos_diff, site_normal_pos)))
+        second_term = ((1.0 / np.power((np.linalg.norm(pos_diff)), 3)) *
+                              np.dot(pos_diff, vel_diff) * np.dot(pos_diff, site_normal_pos))
 
         return first_term - second_term
 
@@ -143,27 +135,27 @@ class VisibilityFinder(object):
         #   1- The interval start
         #   2- The interval midpoint
         #   3- The interval end
-        visibility_start = mp.mpf(self.visibility(start_time))
-        visibility_mid = mp.mpf(self.visibility(mid_time))
-        visibility_end = mp.mpf(self.visibility(end_time))
+        visibility_start = (self.visibility(start_time + self.start_of_interval))
+        visibility_mid = (self.visibility(mid_time + self.start_of_interval))
+        visibility_end = (self.visibility(end_time + self.start_of_interval))
 
-        visibility_d_start = mp.mpf(self.visibility_first_derivative(start_time))
-        visibility_d_mid = mp.mpf(self.visibility_first_derivative(mid_time))
-        visibility_d_end = mp.mpf(self.visibility_first_derivative(end_time))
+        visibility_d_start = (self.visibility_first_derivative(start_time + self.start_of_interval))
+        visibility_d_mid = (self.visibility_first_derivative(mid_time + self.start_of_interval))
+        visibility_d_end = (self.visibility_first_derivative(end_time + self.start_of_interval))
 
         # Calculating the a5 and a4 constants used in the approximation
-        a5 = mp.mpf((((24.0 / (interval_length ** 5.0)) * (visibility_start - visibility_end)) +
-                     ((4.0 / (interval_length ** 4.0)) *
-                      (visibility_d_start + (4.0 * visibility_d_mid) + visibility_d_end))))
+        a5 = ((((24.0 / (interval_length ** 5.0)) * (visibility_start - visibility_end)) +
+                 ((4.0 / (interval_length ** 4.0)) *
+                  (visibility_d_start + (4.0 * visibility_d_mid) + visibility_d_end))))
 
         # Since a4's computation is complex, it was split into several parts
-        a4_first_term = mp.mpf(((4.0 / (interval_length ** 4.0)) *
+        a4_first_term = (((4.0 / (interval_length ** 4.0)) *
                                 (visibility_start + (4.0 * visibility_mid) + visibility_end)))
-        a4_second_term = mp.mpf(((4.0 / (interval_length ** 4.0)) *
+        a4_second_term = (((4.0 / (interval_length ** 4.0)) *
                                  ((visibility_d_start * ((2.0 * start_time) + (3.0 * end_time))) +
                                   ((10.0 * visibility_d_mid) * (start_time + end_time)) +
                                   (visibility_d_end * ((3.0 * start_time) + (2.0 * end_time))))))
-        a4_third_term = mp.mpf(((24.0 / (interval_length ** 5.0)) *
+        a4_third_term = (((24.0 / (interval_length ** 5.0)) *
                                 ((visibility_start * ((2.0 * start_time) + (3.0 * end_time))) -
                                  (visibility_end * ((3.0 * start_time) + (2.0 * end_time))))))
 
@@ -190,7 +182,7 @@ class VisibilityFinder(object):
         visibility_4_prime_max = self.visibility_fourth_derivative_max(time_interval)
 
         # Then we use the error and eq 9 to calculate the new time_step.
-        return mp.power((16.0 * mp.mpf(error)) / (visibility_4_prime_max / 24), 0.25)
+        return np.power((16.0 * error) / (visibility_4_prime_max / 24), 0.25)
 
     def find_approx_coeffs(self, time_interval):
         """Calculates the coefficients of the Hermite approximation to the visibility function for a
@@ -207,11 +199,11 @@ class VisibilityFinder(object):
             This function assumes the FOV of the sensors on the satellite are 180 degrees
         """
         start_time, end_time = time_interval
-        time_step = mp.mpf(end_time - start_time)
-        visibility_start = mp.mpf(self.visibility(start_time))
-        visibility_end = mp.mpf(self.visibility(end_time))
-        visibility_first_start = mp.mpf(self.visibility_first_derivative(start_time))
-        visibility_first_end = mp.mpf(self.visibility_first_derivative(end_time))
+        time_step = (end_time - start_time)
+        visibility_start = (self.visibility(start_time + self.start_of_interval))
+        visibility_end = (self.visibility(end_time + self.start_of_interval))
+        visibility_first_start = (self.visibility_first_derivative(start_time + self.start_of_interval))
+        visibility_first_end = (self.visibility_first_derivative(end_time + self.start_of_interval))
 
         const = (((-2 * (start_time ** 3) * visibility_start) / (time_step ** 3)) +
                  ((2 * (start_time ** 3) * visibility_end) / (time_step ** 3)) +
@@ -304,7 +296,7 @@ class VisibilityFinder(object):
 
         # Check if we began scanning in the beginning of an access interval
         sat_accesses = []
-        if self.visibility(start_time) > 0:
+        if self.visibility(start_time + self.start_of_interval) > 0:
             access_start = start_time
         else:
             access_start = None
@@ -341,7 +333,7 @@ class VisibilityFinder(object):
                 if access_start is None:
                     access_start = root
                 else:
-                    sat_accesses.append(TimeInterval(access_start, root))
+                    sat_accesses.append(TimeInterval(access_start + self.start_of_interval, root + self.start_of_interval))
                     access_start = None
 
             # Set the start time and time step for the next interval
@@ -373,11 +365,8 @@ class VisibilityFinder(object):
         Returns:
             The subintervals over which the site is visible.
         """
-        # Reduce unnecessary accuracy temporarily
-        global_accuracy = mp.mp.dps
-        mp.mp.dps = 5
 
-        start_time, end_time = self.interval
+        start_time, end_time = self.interval[0] + self.start_of_interval, self.interval[1] + self.start_of_interval
         sat_accesses = []
         access_start = None
         for time in range(start_time, end_time, step):
@@ -390,9 +379,6 @@ class VisibilityFinder(object):
                 if visibility_val < 0:
                     sat_accesses.append((access_start, time))
                     access_start = None
-
-        # Restore accuracy
-        mp.mp.dps = global_accuracy
 
         # If the loop terminates and an access end was still not found that means that point should
         # still be visible at the end of the period.

@@ -1,7 +1,6 @@
 from random import randint
 
 from ddt import ddt, data, unpack
-import mpmath as mp
 import numpy as np
 
 from kaos.algorithm import view_cone
@@ -121,8 +120,8 @@ class TestViewCone(KaosTestCase):
 
     @unpack
     @data((0, 6378137),
-          (mp.pi / 2, 6356752.3),
-          (-mp.pi / 2, 6356752.3),
+          (np.pi / 2, 6356752.3),
+          (-np.pi / 2, 6356752.3),
           (0.173387888160433, 6377497.4),  # 10 deg
           (0.346912635298666, 6375654.0),  # 20 deg
           (0.782039744721287, 6367489.5),  # 45 deg

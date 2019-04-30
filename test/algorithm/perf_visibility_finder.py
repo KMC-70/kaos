@@ -1,7 +1,6 @@
 """Visibility Finder Test File."""
 
 from __future__ import print_function
-import mpmath as mp
 import numpy as np
 
 from ddt import ddt, data
@@ -39,7 +38,7 @@ class TestVisibilityFinderPerf(KaosTestCase):
     # @data(('test/test_data/TanSuo1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
     # @data(('test/test_data/Terra_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
     # @data(('test/test_data/Worldview1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
-    # @data(('test/test_data/Timed_Toronto.test', (1546300800 + 0 * 24 * 60 * 60, 1546300800 + 7 * 24 * 60 * 60)))
+    # @data(('test/test_data/Timed_Toronto.test', (1546300800 + 0 * 24 * 60 * 60, 1546300800 + 10 * 24 * 60 * 60)))
     # @data(('test/test_data/Timed_Calgary.test', (1546300800, 1546300800 + 10 * 24 * 60 * 60)))
     def test_visibility_perf(self, test_data):
         """Tests that the visibility finder produces the same results as the access file and prints
@@ -125,11 +124,13 @@ class TestVisibilityFinderPerf(KaosTestCase):
             for time in trimmed_reduced_poi_list:
                 reduced_time += time[1] - time[0]
             print("Viewing cone stats:")
-            print("Reduced time is: {}".format(mp.nstr(reduced_time,12)))
+            print("Reduced time is: {}".format(np.round(reduced_time)))
             print("Input   time is: {}".format(interval[1]-interval[0]))
 
         interval = TimeInterval(*interval)
         expected_accesses = interval_utils.trim_poi_segments(access_info.accesses, interval)
+
+        print("expected ", len(expected_accesses), "but what we found ", len(access_times))
 
         # Check the visibility times
         fail = False
@@ -141,22 +142,22 @@ class TestVisibilityFinderPerf(KaosTestCase):
             if error > 600:
                 fail = True
                 print("start, {}, ------------, {}"
-                    .format(exp_start, mp.nstr(access_times[idx][0] - exp_start, 6)))
+                    .format(exp_start, (access_times[idx][0] - exp_start)))
                 print("end,   {}, ------------, {}"
-                    .format(exp_end, mp.nstr(access_times[idx][1] - exp_end, 6)))
+                    .format(exp_end, (access_times[idx][1] - exp_end)))
             else:
                 print("start, {}, {}, {}"
-                    .format(exp_start, mp.nstr(access_times[idx][0], 11),
-                        mp.nstr(access_times[idx][0] - exp_start, 6)))
+                    .format(exp_start, access_times[idx][0], access_times[idx][0] - exp_start))
                 print("end  , {}, {}, {}"
-                    .format(exp_end, mp.nstr(access_times[idx][1], 11),
-                        mp.nstr(access_times[idx][1] - exp_end, 6)))
+                    .format(exp_end, access_times[idx][1], access_times[idx][1] - exp_end))
                 total_error += error
                 access_times = np.delete(access_times, idx, axis=0)
 
-        print("\nTotal Error: {}".format(mp.nstr(total_error, 12)))
-        print("Average Error: {}".format(mp.nstr(total_error / (len(expected_accesses) * 2))))
+        print("\nTotal Error: {}".format(total_error))
+        print("Average Error: {}".format(total_error / (len(expected_accesses) * 2)))
         if fail:
+            # print("Missing accesses. Unmatched: {}".format(access_times))
             raise Exception("Missing accesses. Unmatched: {}".format(access_times))
         if access_times.size > 0:
+            # print ("Extra accesses. Unmatched: {}".format(access_times))
             raise Exception("Extra accesses. Unmatched: {}".format(access_times))

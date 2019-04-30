@@ -2,7 +2,7 @@
 
 from __future__ import division
 
-import mpmath as mp
+import numpy as np
 from numpy import cross, asarray
 
 from .coord_conversion import geod_to_geoc_lat, geod_to_eci_geoc_lon
@@ -43,7 +43,7 @@ def reduce_poi(site_lat_lon, sat_position_velocity_pairs, q_max, poi):
     site_lon = geod_to_eci_geoc_lon(site_lat_lon[1], poi.start)
 
     # Maximum m
-    expected_final_m = mp.ceil((poi.end - poi.start) / (24 * 60 * 60))
+    expected_final_m = np.ceil((poi.end - poi.start) / (24 * 60 * 60))
 
     # Find the intervals to cover the input POI
     interval_list = []
@@ -96,8 +96,8 @@ def earth_radius_at_geocetric_lat(geoc_lat):
     Returns:
         Earth's radius at the given geocentric latitude (in meters)
     """
-    return EARTH_A_AXIS * EARTH_B_AXIS / mp.sqrt(EARTH_A_AXIS ** 2 * mp.sin(geoc_lat) ** 2 +
-                                                 EARTH_B_AXIS ** 2 * mp.cos(geoc_lat) ** 2)
+    return EARTH_A_AXIS * EARTH_B_AXIS / np.sqrt(EARTH_A_AXIS ** 2 * np.sin(geoc_lat) ** 2 +
+                                                 EARTH_B_AXIS ** 2 * np.cos(geoc_lat) ** 2)
 
 
 def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_max, m):
@@ -124,39 +124,39 @@ def _view_cone_calc(lat_geoc, lon_geoc, sat_pos, sat_vel, q_max, m):
     Note: With more analysis it should be possible to find a correct interval even in the case
         where there are only two intersections but this is beyond the current scope of the project.
     """
-    lat_geoc = (lat_geoc * mp.pi) / 180
-    lon_geoc = (lon_geoc * mp.pi) / 180
+    lat_geoc = (lat_geoc * np.pi) / 180
+    lon_geoc = (lon_geoc * np.pi) / 180
 
     # P vector (also referred  to as orbital angular momentum in the paper) calculations
-    p_unit_x, p_unit_y, p_unit_z = cross(sat_pos, sat_vel) / (mp.norm(sat_pos) * mp.norm(sat_vel))
+    p_unit_x, p_unit_y, p_unit_z = cross(sat_pos, sat_vel) / (np.linalg.norm(sat_pos) * np.linalg.norm(sat_vel))
 
     # Following are equations from Viewing cone section of referenced paper
     r_site_magnitude = earth_radius_at_geocetric_lat(lat_geoc)
-    gamma1 = THETA_NAUGHT + mp.asin((r_site_magnitude * mp.sin((mp.pi / 2) + THETA_NAUGHT)) / q_max)
-    gamma2 = mp.pi - gamma1
+    gamma1 = THETA_NAUGHT + np.arcsin((r_site_magnitude * np.sin((np.pi / 2) + THETA_NAUGHT)) / q_max)
+    gamma2 = np.pi - gamma1
 
     # Note: atan2 instead of atan to get the correct quadrant.
-    arctan_term = mp.atan2(p_unit_x, p_unit_y)
-    arcsin_term_gamma, arcsin_term_gamma2 = [(mp.asin((mp.cos(gamma) - p_unit_z * mp.sin(lat_geoc))
-                                             / (mp.sqrt((p_unit_x ** 2) + (p_unit_y ** 2)) *
-                                              mp.cos(lat_geoc)))) for gamma in [gamma1, gamma2]]
+    arctan_term = np.arctan2(p_unit_x, p_unit_y)
+    arcsin_term_gamma, arcsin_term_gamma2 = [(np.arcsin((np.cos(gamma) - p_unit_z * np.sin(lat_geoc))
+                                             / (np.sqrt((p_unit_x ** 2) + (p_unit_y ** 2)) *
+                                              np.cos(lat_geoc)))) for gamma in [gamma1, gamma2]]
 
-    angle_1 = (arcsin_term_gamma - lon_geoc - arctan_term + 2 * mp.pi * m)
-    angle_2 = (mp.pi - arcsin_term_gamma - lon_geoc - arctan_term + 2 * mp.pi * m)
-    angle_3 = (arcsin_term_gamma2 - lon_geoc - arctan_term + 2 * mp.pi * m)
-    angle_4 = (mp.pi - arcsin_term_gamma2 - lon_geoc - arctan_term + 2 * mp.pi * m)
+    angle_1 = (arcsin_term_gamma - lon_geoc - arctan_term + 2 * np.pi * m)
+    angle_2 = (np.pi - arcsin_term_gamma - lon_geoc - arctan_term + 2 * np.pi * m)
+    angle_3 = (arcsin_term_gamma2 - lon_geoc - arctan_term + 2 * np.pi * m)
+    angle_4 = (np.pi - arcsin_term_gamma2 - lon_geoc - arctan_term + 2 * np.pi * m)
     angles = [angle_1, angle_2, angle_3, angle_4]
 
     # Check for complex answers
-    if any([not isinstance(angle, mp.mpf) for angle in angles]):
+    if any([np.isnan(angle) for angle in angles]):
         raise ValueError()
 
     # Map all angles to 0 to 2*pi
     for idx in range(len(angles)):
         while angles[idx] < 0:
-            angles[idx] += 2 * mp.pi
-        while angles[idx] > 2 * mp.pi:
-            angles[idx] -= 2 * mp.pi
+            angles[idx] += 2 * np.pi
+        while angles[idx] > 2 * np.pi:
+            angles[idx] -= 2 * np.pi
 
     # Calculate the corresponding time for each angle and return
-    return [mp.nint((1 / ANGULAR_VELOCITY_EARTH) * angle) for angle in angles]
+    return [np.round((1 / ANGULAR_VELOCITY_EARTH) * angle) for angle in angles]
