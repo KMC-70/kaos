@@ -50,12 +50,10 @@ def add_segment_to_db(orbit_data, satellite_id):
     segment.save()
     DB.session.commit()
 
-    for orbit_point in orbit_data:
-        orbit_record = OrbitRecord(platform_id=satellite_id, segment_id=segment.segment_id,
-                                   time=orbit_point.time, position=orbit_point.pos,
-                                   velocity=orbit_point.vel)
-        orbit_record.save()
-
+    orbit_recods = [OrbitRecord(platform_id=satellite_id, segment_id=segment.segment_id,
+                               time=orbit_point.time, position=orbit_point.pos,
+                               velocity=orbit_point.vel) for orbit_point in orbit_data]
+    DB.session.bulk_save_objects(orbit_recods)
     DB.session.commit()
     return satellite_id
 
