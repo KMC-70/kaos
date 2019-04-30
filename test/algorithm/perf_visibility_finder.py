@@ -30,13 +30,17 @@ class TestVisibilityFinderPerf(KaosTestCase):
         # parse_ephemeris_file("ephemeris/TanSuo1_28220.e")
         # parse_ephemeris_file("ephemeris/Terra_25994.e")
         # parse_ephemeris_file("ephemeris/Worldview1_32060.e")
+        # parse_ephemeris_file("ephemeris/Timed_26998.e")
+
 
     @data(('test/test_data/vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
-    # @data(('test/test_data/Aqua_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    # @data(('test/test_data/Aqua_Toronto.test', (1546300800, 1546300800 + 30 * 24 * 60 * 60)))
     # @data(('test/test_data/Rapideye2_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
     # @data(('test/test_data/TanSuo1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
     # @data(('test/test_data/Terra_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
     # @data(('test/test_data/Worldview1_vancouver.test', (1514764800, 1514764800 + 10 * 24 * 60 * 60)))
+    # @data(('test/test_data/Timed_Toronto.test', (1546300800 + 0 * 24 * 60 * 60, 1546300800 + 7 * 24 * 60 * 60)))
+    # @data(('test/test_data/Timed_Calgary.test', (1546300800, 1546300800 + 10 * 24 * 60 * 60)))
     def test_visibility_perf(self, test_data):
         """Tests that the visibility finder produces the same results as the access file and prints
         accuracy and performance measurements at the end.

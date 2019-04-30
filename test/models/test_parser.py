@@ -77,10 +77,10 @@ class TestEphemerisParser(KaosTestCaseNonPersistent):
         orbit = OrbitRecord()
 
         # test that both files are included properly
-        self.assertTrue(len(orbit.query.all()) == 34610)
+        self.assertTrue(len(orbit.query.all()) == 267905 + 17303)
 
         # segments from both files
-        self.assertTrue(len(orbit_segment.query.all()) == 26)
+        self.assertTrue(len(orbit_segment.query.all()) == 33 + 12)
         self.assertEqual(first_sat_id, orbit_segment.query.all()[0].platform_id)
         self.assertEqual(second_sat_id, orbit_segment.query.all()[13].platform_id)
         self.assertNotEqual(first_sat_id, second_sat_id)

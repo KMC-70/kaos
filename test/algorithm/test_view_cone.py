@@ -31,7 +31,7 @@ class TestViewCone(KaosTestCase):
 
     @data(
         ('test/test_data/vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
-        ('test/test_data/Aqua_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
+        ('test/test_data/Aqua_Toronto.test', (1546300800, 1546300800 + 31 * 24 * 3600), 0),
         ('test/test_data/Rapideye2_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
         ('test/test_data/TanSuo1_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
         ('test/test_data/Terra_vancouver.test', (1514764800, 1514764800 + 11 * 24 * 3600), 0),
