@@ -43,7 +43,7 @@ pathlib2==2.3.2
 pbr==5.1.1
 pluggy==0.7.1
 psycopg2-binary==2.7.5
-py==1.6.0
+py==1.10.0
 py-moneyed==0.7.0
 pycodestyle==2.4.0
 pyflakes==2.0.0
