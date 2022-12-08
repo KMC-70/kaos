@@ -5,7 +5,7 @@ atomicwrites==1.2.1
 attrs==18.2.0
 Babel==2.6.0
 backports.functools-lru-cache==1.5
-certifi==2018.8.24
+certifi==2022.12.7
 chardet==3.0.4
 Click==7.0
 configparser==3.5.0
